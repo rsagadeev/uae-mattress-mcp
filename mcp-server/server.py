@@ -141,12 +141,39 @@ def delivery_text(r: dict | None) -> str:
     return f"{cost}; {lt}".strip("; ")
 
 
+def offer_lead_time_days(o: dict) -> int | None:
+    """Product-level minimum lead time in days (from catalog or delivery_note)."""
+    v = o.get("lead_time_days")
+    if v is not None:
+        try:
+            return int(v)
+        except (TypeError, ValueError):
+            pass
+    note = o.get("delivery_note") or ""
+    m = re.search(r"no earlier than\s+(\d+)\s+days", note, re.I)
+    return int(m.group(1)) if m else None
+
+
 def delivery_summary(o: dict, emirate: str | None) -> str:
+    """Emirate slot plus product lead time when the latter is longer (or unscheduled)."""
+    note = (o.get("delivery_note") or "").rstrip(".")
+    lead = offer_lead_time_days(o)
+    product_lt = note or (f"no earlier than {lead} days after order confirmation" if lead else None)
     if emirate:
-        return f"{emirate}: {delivery_text(delivery_for(o, emirate))}"
+        r = delivery_for(o, emirate)
+        base = f"{emirate}: {delivery_text(r)}"
+        emirate_max = (r or {}).get("lead_time_days_max")
+        if lead and (emirate_max is None or lead > emirate_max):
+            return f"{base}. Product lead time: {product_lt}"
+        if product_lt and not lead:
+            return f"{base}. {product_lt}"
+        return base
     ok = [r["emirate"] for r in delivery_rules(o) if r.get("available")]
     free = all(r.get("cost_aed") == 0 for r in delivery_rules(o) if r.get("available"))
-    return f"{'Free' if free else 'Paid'} delivery to: {', '.join(ok)}; other emirates not listed"
+    base = f"{'Free' if free else 'Paid'} delivery to: {', '.join(ok)}; other emirates not listed"
+    if product_lt:
+        return f"{base}. Product lead time: {product_lt}"
+    return base
 
 
 def product_features(p: dict) -> set[str]:
@@ -170,11 +197,59 @@ def product_text(p: dict) -> str:
 
 PRODUCT_TEXT = {pid: product_text(p) for pid, p in PRODUCTS.items()}
 
+_STOPWORDS = {
+    "mattress", "mattresses", "the", "and", "for", "with", "in", "of", "a", "an",
+    "cm", "aed", "size", "uae", "ua", "please", "need", "want", "looking",
+}
+
+def _norm_text(s: str | None) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", (s or "").lower()).strip()
+
+
+def _product_name_blob(p: dict) -> str:
+    skus = [o.get("seller_sku") or "" for o in OFFERS_BY_PRODUCT.get(p["product_id"], [])]
+    return _norm_text(" ".join([
+        p.get("name") or "", p.get("model") or "", p.get("brand") or "",
+        p.get("collection") or "", p["product_id"].replace(":", " ").replace("-", " "),
+        " ".join(skus),
+    ]))
+
+
+PRODUCT_NAME_BLOB = {pid: _product_name_blob(p) for pid, p in PRODUCTS.items()}
+
+
+def _query_tokens(query: str | None) -> list[str]:
+    if not query:
+        return []
+    q = re.sub(r"\d{2,3}\s*[x×*х]\s*\d{2,3}", " ", query.lower())
+    return [t for t in re.findall(r"[a-z0-9&]+", q) if len(t) > 1 and t not in _STOPWORDS]
+
+
+def compact_warranty(p: dict) -> dict:
+    w = p.get("warranty") or {}
+    out = {}
+    if w.get("standard_years") is not None:
+        out["standard_years"] = w["standard_years"]
+    if w.get("extended_years") is not None:
+        out["extended_years"] = w["extended_years"]
+        if w.get("extended_condition"):
+            out["extended_condition"] = w["extended_condition"]
+    return out
+
+
+def age_range(p: dict) -> str | None:
+    a = p.get("recommended_age")
+    if isinstance(a, dict) and a.get("label"):
+        return a["label"]
+    return None
+
 
 def offer_row(o: dict, emirate: str | None = None) -> dict:
     p, v = VARIANTS[o["variant_id"]]
     cur, sale = current_price(o)
-    return {
+    w = compact_warranty(p)
+    load = p.get("max_load_per_sleeper_kg")
+    row = {
         "product_id": p["product_id"],
         "offer_id": o["offer_id"],
         "name": p["name"],
@@ -186,15 +261,24 @@ def offer_row(o: dict, emirate: str | None = None) -> dict:
         "height_cm": p.get("height_cm"),
         "construction_type": p.get("construction_type"),
         "audience": p.get("audience"),
+        "age_range": age_range(p),
+        "features": sorted(product_features(p)),
+        "max_load_per_sleeper_kg": load,
+        "max_load_qualifier": p.get("max_load_qualifier") if load is not None else None,
+        "warranty": w or None,
+        "payment_methods": payment_methods(o),
         "regular_price_aed": o.get("price_aed"),
         "current_price_aed": cur,
         "discount_pct": round(100 * (1 - cur / o["price_aed"])) if sale and o.get("price_aed") else 0,
         "sale_ends": o.get("sale_valid_until") if sale else None,
         "availability": o.get("availability"),
         "delivery": delivery_summary(o, emirate),
+        "delivery_note": o.get("delivery_note"),
+        "lead_time_days": offer_lead_time_days(o),
         "url": o.get("url"),
         "last_updated": o.get("last_updated"),
     }
+    return row
 
 
 def catalog_meta() -> dict:
@@ -234,7 +318,25 @@ def _search(query: str | None = None, firmness_min: float | None = None, firmnes
         else:
             notes.append(f"Unknown feature '{f}'. Valid: {FEATURE_KEYS}. Ignored.")
     ct = norm_key(construction_type) if construction_type else None
-    qtokens = [t for t in re.findall(r"[a-z0-9&]+", (query or "").lower()) if len(t) > 2]
+    qtokens = _query_tokens(query)
+    name_query = False
+    name_threshold = 0
+    if qtokens:
+        phrase = " ".join(qtokens)
+        name_hits = []
+        for pid, blob in PRODUCT_NAME_BLOB.items():
+            hits = sum(1 for tok in qtokens if tok in blob)
+            phrase_hit = phrase in blob
+            name_hits.append((hits, phrase_hit, pid))
+        max_hits = max((h[0] for h in name_hits), default=0)
+        any_phrase = any(h[1] for h in name_hits)
+        # Treat as a model-name query when some product name contains most tokens or the phrase.
+        if any_phrase or (max_hits >= 2 and max_hits >= int(0.75 * len(qtokens) + 0.999)):
+            name_query = True
+            name_threshold = max(max_hits if any_phrase and max_hits == len(qtokens) else max(2, max_hits - 1), 2)
+            # If an exact/full-token name match exists, drop weak name matches.
+            if any_phrase or max_hits == len(qtokens):
+                name_threshold = max(name_threshold, max_hits)
 
     rows = []
     for o in CAT["offers"]:
@@ -272,8 +374,21 @@ def _search(query: str | None = None, firmness_min: float | None = None, firmnes
             continue
         score = 0.0
         if qtokens:
-            txt = PRODUCT_TEXT[p["product_id"]]
-            score += sum(2 if t in (p["name"] or "").lower() else 1 for t in qtokens if t in txt)
+            pid = p["product_id"]
+            blob = PRODUCT_NAME_BLOB[pid]
+            txt = PRODUCT_TEXT[pid]
+            name_hits = sum(1 for tok in qtokens if tok in blob)
+            phrase = " ".join(qtokens)
+            phrase_hit = phrase in blob
+            if name_query and name_hits < name_threshold and not phrase_hit:
+                continue
+            if not name_query and not any(tok in txt for tok in qtokens):
+                continue
+            score += 20 if phrase_hit else 0
+            score += 5 * name_hits
+            score += sum(1 for tok in qtokens if tok in txt)
+            if o.get("seller_sku") and _norm_text(o.get("seller_sku")) == _norm_text(query):
+                score += 30
         score += 0.5 * (o.get("availability") == "in_stock")
         rows.append((score, cur or 0, fv, o))
 
@@ -385,6 +500,10 @@ def _product_full(p: dict, size: str | None = None) -> dict:
             "regular_price_aed": o.get("price_aed"), "current_price_aed": cur,
             "sale_ends": o.get("sale_valid_until") if sale else None,
             "availability": o.get("availability"), "weight_kg": v.get("weight_kg"), "gtin": v.get("gtin"),
+            "payment_methods": payment_methods(o),
+            "delivery": delivery_summary(o, None),
+            "delivery_note": o.get("delivery_note"),
+            "lead_time_days": offer_lead_time_days(o),
             "url": o.get("url"), "last_updated": o.get("last_updated"),
         })
     offers.sort(key=lambda x: (x["current_price_aed"] or 0))
@@ -397,7 +516,8 @@ def _product_full(p: dict, size: str | None = None) -> dict:
         "fillers": p.get("fillers"), "cover_material": p.get("cover_material"),
         "comfort_features": cf, "feature_evidence": p.get("feature_evidence"),
         "max_load_per_sleeper_kg": p.get("max_load_per_sleeper_kg"), "max_load_qualifier": p.get("max_load_qualifier"),
-        "warranty": p.get("warranty"), "trial_nights": p.get("trial_nights"),
+        "warranty": p.get("warranty"), "recommended_age": p.get("recommended_age"),
+        "age_range": age_range(p), "trial_nights": p.get("trial_nights"),
         "country_of_origin": p.get("country_of_origin"), "certifications": p.get("certifications"),
         "description": p.get("description"), "images": (p.get("images") or [])[:4],
         "offers": offers,
@@ -497,7 +617,8 @@ def get_seller_policies(
         res.append({
             "seller_id": s["seller_id"], "name": s["name"], "legal_name": s.get("legal_name"),
             "trade_license_no": s.get("trade_license_no"), "seller_type": s.get("seller_type"),
-            "website": s.get("website"), "contact_phone": s.get("contact_phone"), "showrooms": s.get("showrooms"),
+            "website": s.get("website"), "contact_phone": s.get("contact_phone"),
+            "contact_phones": s.get("contact_phones"), "showrooms": s.get("showrooms"),
             "payment_methods": s.get("payment_methods"),
             "delivery_by_emirate": [dict(r, summary=delivery_text(r)) for r in s.get("default_delivery") or []],
             "services": s.get("default_services"), "return_policy": s.get("return_policy"),

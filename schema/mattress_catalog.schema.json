@@ -254,6 +254,21 @@
               },
               "address": {
                 "type": "string"
+              },
+              "phone": {
+                "type": "string"
+              },
+              "phones": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "hours": {
+                "type": "string"
+              },
+              "notes": {
+                "type": "string"
               }
             }
           }
@@ -303,6 +318,20 @@
             "string",
             "null"
           ]
+        },
+        "contact_phones": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "phone": {
+                "type": "string"
+              }
+            }
+          }
         }
       }
     },
@@ -807,6 +836,30 @@
             "type": "string"
           },
           "description": "Brand's attribute table verbatim (key -> value) for audit."
+        },
+        "recommended_age": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "min_years": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "max_years": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "description": "Age recommendation parsed from brand badges/description (kids mattresses)."
         }
       }
     },
@@ -996,6 +1049,14 @@
             "null"
           ],
           "description": "Where the price was read."
+        },
+        "lead_time_days": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Minimum product-level lead time in days parsed from delivery_note (e.g. 'no earlier than 10 days'). Null if the listing has no such note."
         }
       }
     }
