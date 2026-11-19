@@ -255,6 +255,7 @@ def offer_row(o: dict, emirate: str | None = None) -> dict:
         "name": p["name"],
         "brand": p["brand"],
         "seller": SELLERS[o["seller_id"]]["name"],
+        "seller_id": o["seller_id"],
         "size": v["size_label"],
         "size_class": v["size_class"],
         "firmness": firmness_summary(p),
@@ -291,7 +292,7 @@ def catalog_meta() -> dict:
 def _search(query: str | None = None, firmness_min: float | None = None, firmness_max: float | None = None,
             size: str | None = None, size_class: str | None = None, price_min: float | None = None,
             price_max: float | None = None, construction_type: str | None = None, audience: str | None = None,
-            brand: str | None = None, emirate: str | None = None, payment_method: str | None = None,
+            brand: str | None = None, seller: str | None = None, emirate: str | None = None, payment_method: str | None = None,
             features: list[str] | None = None, in_stock_only: bool = False, sort: str = "relevance",
             limit: int = 10, one_per_product: bool = False) -> dict:
     notes: list[str] = []
@@ -317,6 +318,15 @@ def _search(query: str | None = None, firmness_min: float | None = None, firmnes
             feats.append(k)
         else:
             notes.append(f"Unknown feature '{f}'. Valid: {FEATURE_KEYS}. Ignored.")
+    seller_filter = seller.strip().lower() if seller else None
+    if seller_filter:
+        known = {sid.lower() for sid in SELLERS} | {s["name"].lower() for s in SELLERS.values()}
+        if seller_filter not in known:
+            notes.append(
+                f"Unknown seller '{seller}'. Valid ids: {sorted(SELLERS)}. "
+                f"Valid names: {sorted({s['name'] for s in SELLERS.values()})}. Filter ignored."
+            )
+            seller_filter = None
     ct = norm_key(construction_type) if construction_type else None
     qtokens = _query_tokens(query)
     name_query = False
@@ -343,6 +353,10 @@ def _search(query: str | None = None, firmness_min: float | None = None, firmnes
         p, v = VARIANTS[o["variant_id"]]
         if brand and brand.strip().lower() not in (p["brand"] or "").lower():
             continue
+        if seller_filter:
+            srec = SELLERS.get(o["seller_id"], {})
+            if seller_filter not in (o["seller_id"] or "").lower() and seller_filter not in (srec.get("name") or "").lower():
+                continue
         if audience and (p.get("audience") or "") != audience.strip().lower():
             continue
         if ct and (p.get("construction_type") or "") != ct:
@@ -407,8 +421,9 @@ def _search(query: str | None = None, firmness_min: float | None = None, firmnes
     if one_per_product:
         seen, dedup = set(), []
         for r in rows:
-            if r[3]["product_id"] not in seen:
-                seen.add(r[3]["product_id"])
+            key = (r[3]["product_id"], r[3]["seller_id"])
+            if key not in seen:
+                seen.add(key)
                 dedup.append(r)
         rows = dedup
     limit = max(1, min(int(limit or 10), 50))
@@ -431,8 +446,11 @@ def _search(query: str | None = None, firmness_min: float | None = None, firmnes
 
 # ----------------------------------------------------------------------------- server
 INSTRUCTIONS = (
-    "Live, agent-readable catalog of mattresses sold in the United Arab Emirates (pilot data: Askona Gulf / "
-    "askona.ae, brands Askona, Sleep Professor, Grether & Wells). All prices are in AED, VAT-inclusive as listed. "
+    "Live, agent-readable catalog of mattresses sold in the United Arab Emirates. Pilot sellers: Askona Gulf "
+    "(askona.ae — brands Askona, Sleep Professor, Grether & Wells) and The Mattress Store "
+    "(themattressstore.com — a multi-brand retailer selling Englander, Vispring and Colunex). "
+    "Always name the seller in recommendations: the same model can be offered by more than one seller. "
+    "All prices are in AED, VAT-inclusive as listed. "
     "current_price_aed already applies any active sale. Always cite the product/offer url and its last_updated "
     "date when recommending. Never invent missing fields: null means the seller did not publish it — say so. "
     "Firmness uses a normalized 1-10 scale (1 softest, 10 firmest) derived from brand wording, not lab-measured; "
@@ -446,7 +464,7 @@ mcp = MCPServer(
     name="uae-mattress-catalog",
     title="UAE Mattress Catalog (agent-first, pilot)",
     instructions=INSTRUCTIONS,
-    version="0.1.0",
+    version="0.3.0",
 )
 RO = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
 
@@ -471,9 +489,10 @@ def search_mattresses(
                           Field(description="Size class. UAE/EU mapping: single 80-100 wide, small_double 120, double 140-150, queen 160, king 180, super_king 200.")] = None,
     price_min: Annotated[float | None, Field(ge=0, description="Minimum current price, AED.")] = None,
     price_max: Annotated[float | None, Field(ge=0, description="Maximum current price, AED.")] = None,
-    construction_type: Annotated[Literal["pocket_spring", "memory_foam"] | None, Field(description="Core construction.")] = None,
+    construction_type: Annotated[Literal["pocket_spring", "memory_foam", "hybrid", "latex", "foam"] | None, Field(description="Core construction.")] = None,
     audience: Annotated[Literal["adult", "kids"] | None, Field(description="Adult or kids mattresses.")] = None,
-    brand: Annotated[str | None, Field(description="Brand name, e.g. 'Askona', 'Sleep Professor', 'Grether & Wells'.")] = None,
+    brand: Annotated[str | None, Field(description="Brand name, e.g. 'Askona', 'Englander', 'Vispring', 'Sleep Professor'.")] = None,
+    seller: Annotated[str | None, Field(description="Seller id or name, e.g. 'askona-gulf', 'the-mattress-store', 'Askona', 'The Mattress Store'. Filters offers of that seller only.")] = None,
     emirate: Annotated[str | None, Field(description="Delivery emirate: dubai, abu_dhabi, sharjah, ajman, umm_al_quwain, ras_al_khaimah, fujairah. Keeps only offers with confirmed delivery there.")] = None,
     payment_method: Annotated[Literal["tabby", "tamara", "cod", "card"] | None, Field(description="Required payment option. cod = cash or card on delivery.")] = None,
     features: Annotated[list[str] | None, Field(description="Required features (all must be true): cooling, orthopedic, memory_foam, zoned_support, edge_support, motion_isolation, hypoallergenic_antibacterial, removable_cover, flippable.")] = None,
@@ -483,7 +502,7 @@ def search_mattresses(
     one_per_product: Annotated[bool, Field(description="Return at most one offer (best-ranked size) per model.")] = False,
 ) -> dict[str, Any]:
     return _search(query, firmness_min, firmness_max, size, size_class, price_min, price_max, construction_type,
-                   audience, brand, emirate, payment_method, features, in_stock_only, sort, limit, one_per_product)
+                   audience, brand, seller, emirate, payment_method, features, in_stock_only, sort, limit, one_per_product)
 
 
 def _product_full(p: dict, size: str | None = None) -> dict:
@@ -593,8 +612,24 @@ def compare_products(
                                          "availability": o.get("availability"), "url": o.get("url")}
             else:
                 col["price_for_size"] = f"{size} not offered"
+        all_offs = OFFERS_BY_PRODUCT.get(p["product_id"], [])
+        col["sellers"] = sorted({SELLERS[o["seller_id"]]["name"] for o in all_offs})
+        if want and offs:
+            col["offers_for_size"] = []
+            for o in offs:
+                cur, sale = current_price(o)
+                col["offers_for_size"].append({
+                    "seller": SELLERS[o["seller_id"]]["name"], "seller_id": o["seller_id"],
+                    "regular_aed": o.get("price_aed"), "current_aed": cur,
+                    "sale_ends": o.get("sale_valid_until") if sale else None,
+                    "availability": o.get("availability"), "url": o.get("url"),
+                })
+            # cheapest offer kept in price_for_size for compatibility
+            cheapest = min(col["offers_for_size"], key=lambda x: x["current_aed"] or 10**12)
+            col["price_for_size"]["seller"] = cheapest["seller"]
+            col["price_for_size"]["seller_id"] = cheapest["seller_id"]
         col["current_price_range_aed"] = [min(prices), max(prices)] if prices else None
-        col["sizes_available"] = sorted({VARIANTS[o["variant_id"]][1]["size_label"] for o in OFFERS_BY_PRODUCT.get(p["product_id"], [])})
+        col["sizes_available"] = sorted({VARIANTS[o["variant_id"]][1]["size_label"] for o in all_offs})
         col["url"] = (p.get("source") or {}).get("url")
         col["last_updated"] = p.get("last_updated")
         cols.append(col)
@@ -644,6 +679,8 @@ def list_filters() -> dict[str, Any]:
     pm = sorted({m for s in SELLERS.values() for m in s.get("payment_methods") or []})
     return {
         "counts": {"products": len(PRODUCTS), "offers": len(OFFERS), "sellers": len(SELLERS)},
+        "sellers": [{"seller_id": s["seller_id"], "name": s["name"], "seller_type": s.get("seller_type"),
+                     "offers": sum(1 for o in CAT["offers"] if o["seller_id"] == s["seller_id"])} for s in CAT["sellers"]],
         "brands": dict(Counter(p["brand"] for p in CAT["products"])),
         "audiences": dict(Counter(p["audience"] for p in CAT["products"])),
         "construction_types": dict(Counter(p["construction_type"] or "unknown" for p in CAT["products"])),
@@ -697,6 +734,15 @@ def parse_free_text(q: str) -> dict:
     for b in {p["brand"] for p in CAT["products"]}:
         if b.lower() in ql:
             f["brand"] = b
+    for sid, srec in SELLERS.items():
+        names = [sid.replace("-", " "), sid, srec.get("name") or ""]
+        if any(n.lower() in ql for n in names if len(n) >= 5):
+            f["seller"] = sid
+            break
+    if "mattress store" in ql or "themattressstore" in ql:
+        f["seller"] = "the-mattress-store"
+    if "askona.ae" in ql or "askona gulf" in ql:
+        f["seller"] = "askona-gulf"
     feats = [k for k in FEATURE_KEYS if k.replace("_", " ") in ql or k in ql]
     feats += [v for a, v in FEATURE_ALIASES.items() if a in ql and v not in feats]
     if "cool" in ql and "cooling" not in feats:

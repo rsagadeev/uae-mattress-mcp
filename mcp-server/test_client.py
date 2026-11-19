@@ -16,6 +16,15 @@ CALLS = [
     ("get_product", {"product_id": "sleep-professor:arizona-duo", "size": "160x200"}),
     ("compare_products", {"product_ids": ["sleep-professor:arizona-duo", "askona:askona-ortho-hard"], "size": "160x200"}),
     ("get_seller_policies", {"seller_id": "askona-gulf"}),
+    ("get_seller_policies", {"seller_id": "the-mattress-store"}),
+    ("get_seller_policies", {}),
+    ("search_mattresses", {"seller": "the-mattress-store", "size": "160x200", "price_max": 3000,
+                           "sort": "price_asc", "limit": 5, "one_per_product": True}),
+    ("search_mattresses", {"seller": "askona-gulf", "size": "160x200", "price_max": 2000,
+                           "sort": "price_asc", "limit": 3, "one_per_product": True}),
+    ("search_mattresses", {"query": "Bodiform Gel Tight Top", "size": "160x200", "limit": 5}),
+    ("compare_products", {"product_ids": ["englander:bodiform-gel-tight-top", "sleep-professor:arizona-duo"],
+                          "size": "160x200"}),
     ("search", {"query": "medium firm mattress 160x200 under 2000 AED delivered to Abu Dhabi, pay with Tabby"}),
 ]
 
@@ -44,7 +53,7 @@ async def main():
                 if name == "search_mattresses" and sc:
                     print("total:", sc["total_matching_offers"], "notes:", sc.get("notes"))
                     for x in sc["results"]:
-                        print(f"  {x['name']} {x['size']} firm={x['firmness'].get('scale_1_10') or [y['scale_1_10'] for y in x['firmness'].get('sides', [])]} "
+                        print(f"  [{x.get('seller')}] {x['name']} {x['size']} firm={x['firmness'].get('scale_1_10') or [y['scale_1_10'] for y in x['firmness'].get('sides', [])]} "
                               f"{x['regular_price_aed']}->{x['current_price_aed']} AED until {x['sale_ends']} | {x['availability']} | {x['delivery']} | {x['url']}")
                 elif name == "search" and sc:
                     for x in sc["results"]:
