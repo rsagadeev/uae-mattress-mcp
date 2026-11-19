@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: uae-mattress-mcp
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -r mcp-server/requirements.txt
+    startCommand: python mcp-server/server.py
+    healthCheckPath: /health

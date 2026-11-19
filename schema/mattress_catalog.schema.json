@@ -1,0 +1,1003 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/agent-marketplace/schema/mattress_catalog.schema.json",
+  "title": "UAE Agent-First Mattress Catalog v0",
+  "description": "Brand-neutral, multi-seller mattress catalog designed to be read by AI shopping agents. Three layers: product (what the mattress is, identical for every seller), variant (a size of the product), offer (a specific seller's price/stock/delivery for one variant). Unknown values MUST be null or omitted, never guessed. All money in AED, all lengths in cm, all weights in kg.",
+  "type": "object",
+  "required": [
+    "catalog_version",
+    "generated_at",
+    "currency",
+    "country",
+    "sellers",
+    "products",
+    "offers"
+  ],
+  "properties": {
+    "catalog_version": {
+      "type": "string",
+      "description": "Semantic version of this data file, e.g. 0.1.0"
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "mattress-v0"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "currency": {
+      "type": "string",
+      "const": "AED"
+    },
+    "country": {
+      "type": "string",
+      "const": "AE"
+    },
+    "firmness_scale": {
+      "$ref": "#/$defs/firmness_scale"
+    },
+    "sellers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/seller"
+      }
+    },
+    "products": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/product"
+      }
+    },
+    "offers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/offer"
+      }
+    }
+  },
+  "$defs": {
+    "money_aed": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "description": "Amount in AED incl. 5% VAT as displayed to consumers."
+    },
+    "emirate": {
+      "type": "string",
+      "enum": [
+        "abu_dhabi",
+        "dubai",
+        "sharjah",
+        "ajman",
+        "umm_al_quwain",
+        "ras_al_khaimah",
+        "fujairah"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "description": "Provenance of the record so agents can verify.",
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "fetched_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "seller_feed",
+            "seller_api",
+            "public_page_scrape",
+            "manual_entry"
+          ]
+        }
+      }
+    },
+    "firmness_scale": {
+      "type": "object",
+      "description": "Mapping from brand firmness labels to the normalized 1-10 scale (1 = softest, 10 = firmest). Shared by all brands so agents can compare.",
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "mapping": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "firmness_side": {
+      "type": "object",
+      "properties": {
+        "side": {
+          "type": "string",
+          "enum": [
+            "both",
+            "side_a",
+            "side_b"
+          ]
+        },
+        "brand_label": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Firmness wording exactly as the brand shows it, e.g. 'Medium firm'."
+        },
+        "normalized_1_10": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Brand label mapped through firmness_scale. Derived, not measured."
+        }
+      }
+    },
+    "layer": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "type": "integer",
+          "description": "1 = top (cover) downwards."
+        },
+        "material": {
+          "type": "string",
+          "description": "Material as the brand names it, e.g. 'Memory Foam', 'Coconut fiber'."
+        },
+        "material_class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "cover_fabric",
+            "memory_foam",
+            "polyurethane_foam",
+            "latex_natural",
+            "latex_synthetic",
+            "coir",
+            "felt",
+            "spring_unit",
+            "gel",
+            "wool",
+            "cotton",
+            "other",
+            null
+          ]
+        },
+        "thickness_cm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "material"
+      ]
+    },
+    "seller": {
+      "type": "object",
+      "required": [
+        "seller_id",
+        "name"
+      ],
+      "properties": {
+        "seller_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Trading name shown to shoppers."
+        },
+        "legal_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "trade_license_no": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "website": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
+        "seller_type": {
+          "type": "string",
+          "enum": [
+            "brand_direct",
+            "authorized_retailer",
+            "marketplace_seller"
+          ]
+        },
+        "contact_phone": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "showrooms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "emirate": {
+                "$ref": "#/$defs/emirate"
+              },
+              "address": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "payment_methods": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "card_online",
+              "apple_pay",
+              "google_pay",
+              "cash_on_delivery",
+              "card_on_delivery",
+              "tabby",
+              "tamara",
+              "bank_transfer",
+              "other"
+            ]
+          },
+          "description": "Default methods for all offers of this seller; an offer may override."
+        },
+        "return_policy": {
+          "$ref": "#/$defs/return_policy"
+        },
+        "warranty_policy_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
+        "default_delivery": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/delivery_zone"
+          }
+        },
+        "default_services": {
+          "$ref": "#/$defs/services"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "notes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "return_policy": {
+      "type": "object",
+      "properties": {
+        "accepts_returns": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "window_days": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Days from delivery to request a return of a non-defective item."
+        },
+        "window_basis": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "calendar_days",
+            "working_days",
+            null
+          ]
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Each condition as a short sentence, e.g. 'Item must be unopened'."
+        },
+        "excludes_sale_items": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "return_shipping_paid_by": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "seller",
+            "customer",
+            "varies",
+            null
+          ]
+        },
+        "policy_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        }
+      }
+    },
+    "delivery_zone": {
+      "type": "object",
+      "required": [
+        "emirate"
+      ],
+      "properties": {
+        "emirate": {
+          "$ref": "#/$defs/emirate"
+        },
+        "available": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "cost_aed": {
+          "$ref": "#/$defs/money_aed"
+        },
+        "lead_time_days_min": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "lead_time_days_max": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Upper bound in days after order confirmation; working days unless lead_time_note says otherwise."
+        },
+        "lead_time_note": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Seller's wording, e.g. 'Tuesday, Thursday, Saturday'."
+        }
+      }
+    },
+    "services": {
+      "type": "object",
+      "properties": {
+        "installation_included": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Unpacking/placing the mattress included in price."
+        },
+        "installation_cost_aed": {
+          "$ref": "#/$defs/money_aed"
+        },
+        "old_mattress_removal_available": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "old_mattress_removal_cost_aed": {
+          "$ref": "#/$defs/money_aed"
+        },
+        "old_mattress_removal_note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pickup_available": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "product": {
+      "type": "object",
+      "required": [
+        "product_id",
+        "brand",
+        "model",
+        "name",
+        "category",
+        "variants"
+      ],
+      "properties": {
+        "product_id": {
+          "type": "string",
+          "description": "Marketplace-wide stable ID: <brand-slug>:<model-slug>.",
+          "pattern": "^[a-z0-9-]+:[a-z0-9-]+$"
+        },
+        "brand": {
+          "type": "string",
+          "description": "Brand shown on the product, e.g. 'Askona', 'Grether & Wells', 'Sleep Professor'."
+        },
+        "manufacturer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "collection": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "model": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full product name without size."
+        },
+        "category": {
+          "type": "string",
+          "const": "mattress"
+        },
+        "audience": {
+          "type": "string",
+          "enum": [
+            "adult",
+            "kids",
+            "baby"
+          ]
+        },
+        "gtin": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Product-level GTIN if one exists (usually per variant)."
+        },
+        "mpn": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "construction_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "pocket_spring",
+            "bonnell_spring",
+            "foam",
+            "memory_foam",
+            "hybrid",
+            "latex",
+            "coir",
+            "other",
+            null
+          ],
+          "description": "pocket_spring = independent springs; hybrid = pocket springs + >= 5 cm comfort foam/latex as declared by brand; foam = no springs."
+        },
+        "spring_system": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "type_label": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Brand wording, e.g. 'Independent spring (pocket spring)'."
+            },
+            "zones": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "springs_per_sleeping_place": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "spring_height_mm": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          }
+        },
+        "firmness": {
+          "type": "object",
+          "properties": {
+            "brand_label": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Raw firmness text as shown by brand."
+            },
+            "normalized_1_10": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "For single-feel mattresses; for dual-sided use sides[]."
+            },
+            "dual_sided": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "true if the two sides have different firmness (flip to change)."
+            },
+            "sides": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/firmness_side"
+              }
+            }
+          }
+        },
+        "height_cm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/layer"
+          }
+        },
+        "fillers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Short list of key filling materials as tagged by the brand."
+        },
+        "comfort_features": {
+          "type": "object",
+          "description": "true = brand explicitly claims it; null = not stated. Never false unless brand states absence.",
+          "properties": {
+            "cooling": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "orthopedic": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "motion_isolation": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "edge_support": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "zoned_support": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "memory_foam": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "hypoallergenic_antibacterial": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "removable_cover": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "flippable": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "feature_tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Brand marketing badges verbatim."
+            }
+          }
+        },
+        "max_load_per_sleeper_kg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "max_load_qualifier": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "up_to",
+            "over",
+            null
+          ],
+          "description": "'over' means brand says 'over N kg' (no upper bound declared)."
+        },
+        "certifications": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warranty": {
+          "type": "object",
+          "properties": {
+            "standard_years": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "extended_years": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "extended_condition": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "e.g. 'Only when purchased with branded mattress protector'."
+            }
+          }
+        },
+        "trial_nights": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Sleep trial with right to return after use. null if no trial is stated."
+        },
+        "country_of_origin": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "ISO 3166-1 alpha-2."
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Plain text, <= 5000 chars."
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "rating": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "value": {
+              "type": "number"
+            },
+            "count": {
+              "type": "integer"
+            },
+            "source": {
+              "type": "string"
+            }
+          }
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/variant"
+          }
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "last_updated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "cover_material": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "feature_evidence": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "For each comfort_features flag set to true from text, the quoted snippet that justifies it."
+        },
+        "adjustable_base_compatible": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "raw_brand_attributes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Brand's attribute table verbatim (key -> value) for audit."
+        }
+      }
+    },
+    "variant": {
+      "type": "object",
+      "required": [
+        "variant_id",
+        "width_cm",
+        "length_cm"
+      ],
+      "properties": {
+        "variant_id": {
+          "type": "string",
+          "description": "<product_id>:<width>x<length>[-<color>]"
+        },
+        "width_cm": {
+          "type": "number"
+        },
+        "length_cm": {
+          "type": "number"
+        },
+        "size_label": {
+          "type": "string",
+          "description": "e.g. '160x200'."
+        },
+        "size_class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "crib",
+            "kids_other",
+            "single",
+            "small_double",
+            "double",
+            "queen",
+            "king",
+            "super_king",
+            null
+          ],
+          "description": "Width-based class for length >= 190 cm: <=100 single, 101-120 small_double, 121-140 double, 141-160 queen, 161-180 king, >180 super_king. Length < 190: kids_other (width >= 70) or crib."
+        },
+        "color": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "gtin": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "weight_kg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "offer": {
+      "type": "object",
+      "required": [
+        "offer_id",
+        "variant_id",
+        "product_id",
+        "seller_id",
+        "availability",
+        "last_updated"
+      ],
+      "properties": {
+        "offer_id": {
+          "type": "string"
+        },
+        "product_id": {
+          "type": "string"
+        },
+        "variant_id": {
+          "type": "string"
+        },
+        "seller_id": {
+          "type": "string"
+        },
+        "seller_sku": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "price_aed": {
+          "$ref": "#/$defs/money_aed",
+          "description": "Regular (list / crossed-out) price."
+        },
+        "sale_price_aed": {
+          "$ref": "#/$defs/money_aed",
+          "description": "Price the shopper actually pays now. If no discount, equals price_aed."
+        },
+        "sale_valid_until": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "availability": {
+          "type": "string",
+          "enum": [
+            "in_stock",
+            "out_of_stock",
+            "pre_order",
+            "backorder",
+            "made_to_order",
+            "unknown"
+          ]
+        },
+        "stock_qty": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "delivery": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/delivery_zone"
+          },
+          "description": "If empty, seller.default_delivery applies."
+        },
+        "delivery_note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "services": {
+          "$ref": "#/$defs/services",
+          "description": "Empty object = seller.default_services applies."
+        },
+        "payment_methods": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Empty = seller.payment_methods applies."
+        },
+        "return_policy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/return_policy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null = seller.return_policy applies."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "image_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
+        "last_updated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "availability_note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "price_source": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Where the price was read."
+        }
+      }
+    }
+  }
+}
