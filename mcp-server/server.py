@@ -603,7 +603,7 @@ mcp = MCPServer(
     name="uae-mattress-catalog",
     title="UAE Mattress Catalog (agent-first, pilot)",
     instructions=INSTRUCTIONS,
-    version="0.4.0",
+    version="0.4.1",
 )
 RO = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
 

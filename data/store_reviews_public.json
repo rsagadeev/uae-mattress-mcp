@@ -1,6 +1,6 @@
 {
-  "collected_at": "2026-11-19T22:30:00+02:00",
-  "source_note": "PlacesSearch / Google Maps connector was not installed. Ratings and review counts are Google Maps figures as published on public place pages (exa.ai place library, mall directories, uaemallguide) on 2026-11-19. Representative review texts are included only when a public mirror published them; otherwise texts are omitted (not invented).",
+  "collected_at": "2026-11-19T22:10:39+02:00",
+  "source_note": "Showroom ratings, review counts and phones refreshed from Google Maps via PlacesSearch on 2026-11-19 (Asia/Nicosia). Places returned no new review texts; earlier representative texts from public mirrors are kept with their original sources.",
   "sellers": {
     "askona-gulf": {
       "showrooms": [
@@ -11,13 +11,13 @@
           "address": "Premises AT010 & AT011, Mezzanine floor, Crescent Rd, Dubai Festival City, Dubai",
           "phone": "+971 50 685 2043",
           "google_rating": 4.8,
-          "google_review_count": 72,
+          "google_review_count": 88,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Askona+Festival+City+Mall+Dubai&query_place_id=",
           "coordinates": {
             "lat": 25.222445,
             "lng": 55.355501
           },
-          "rating_source": "Google Maps rating as listed on public place pages (exa.ai/library/place/t4h4bmsfv7n and emiratesbz.com/dubai/askona-258738), collected 2026-11-19",
+          "rating_source": "Google Maps (Places), 2026-11-19",
           "reviews_source": "Public review mirror emiratesbz.com/dubai/askona-258738 (Google reviews republication). Star ratings were not always published on the mirror; they are stored only when the text itself states one. Author = first name only.",
           "reviews": [
             {
@@ -64,16 +64,16 @@
           "address": "Deerfields Mall, Al Shahama Road, Al Bahya, Abu Dhabi",
           "phone": "+971 56 992 7721",
           "google_rating": 5.0,
-          "google_review_count": 126,
+          "google_review_count": 138,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Askona+Deerfields+Mall+Abu+Dhabi",
-          "rating_source": "Google Maps rating as listed on uaemallguide.com/abu-dhabi/malls/deerfields-mall/askona1/ (explicitly “126 Google Maps reviews”), collected 2026-11-19",
+          "rating_source": "Google Maps (Places), 2026-11-19",
           "reviews_source": "No public review texts for this showroom were readable on the pages we could open (Maps connector unavailable; Maps HTML not reliably readable). Texts are not invented.",
           "reviews": []
         }
       ],
       "aggregate": {
-        "google_rating": 4.93,
-        "google_review_count": 198,
+        "google_rating": 4.92,
+        "google_review_count": 226,
         "showrooms_with_rating": 2,
         "showrooms_total": 2,
         "method": "weighted_by_review_count",
@@ -89,13 +89,13 @@
           "address": "First Floor, Unit TDM-FF-087, The Dubai Mall, Dubai",
           "phone": "+971 4 718 1666",
           "google_rating": 4.2,
-          "google_review_count": 109,
+          "google_review_count": 117,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Dubai+Mall+TDM-FF-087",
           "coordinates": {
             "lat": 25.198112,
             "lng": 55.278797
           },
-          "rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/lhqhpz10k4q, collected 2026-11-19",
+          "rating_source": "Google Maps (Places), 2026-11-19",
           "reviews": [],
           "reviews_source": "Review texts not available from public pages we could read."
         },
@@ -106,9 +106,9 @@
           "address": "Showroom 2, Eiffel 2 Building, Sheikh Zayed Road, Dubai",
           "phone": "+971 4 546 2622",
           "google_rating": 4.5,
-          "google_review_count": 320,
+          "google_review_count": 346,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Eiffel+2+Sheikh+Zayed+Road+Dubai",
-          "rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/blfxwj476h6, collected 2026-11-19",
+          "rating_source": "Google Maps (Places), 2026-11-19",
           "reviews": [],
           "reviews_source": "Review texts not available from public pages we could read."
         },
@@ -119,9 +119,9 @@
           "address": "Shop 1, Umm Suqeim Road, Al Barsha 2, Dubai",
           "phone": "+971 4 395 1159",
           "google_rating": 4.4,
-          "google_review_count": 310,
+          "google_review_count": 314,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Umm+Suqeim+Road+Al+Barsha+Dubai",
-          "rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/xncpvcfy2jx, collected 2026-11-19",
+          "rating_source": "Google Maps (Places), 2026-11-19",
           "reviews": [],
           "reviews_source": "Review texts not available from public pages we could read."
         },
@@ -132,9 +132,9 @@
           "address": "Unit 232, Dubai Hills Mall, Al Khail Road, Dubai",
           "phone": "+971 4 263 8983",
           "google_rating": 4.6,
-          "google_review_count": 456,
+          "google_review_count": 490,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Dubai+Hills+Mall+Unit+232",
-          "rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/yggjvtwdvgg, collected 2026-11-19",
+          "rating_source": "Google Maps (Places), 2026-11-19",
           "reviews": [],
           "reviews_source": "Review texts not available from public pages we could read."
         },
@@ -145,13 +145,13 @@
           "address": "Shop AT-009, M Floor, Dubai Festival City Mall, Dubai",
           "phone": "+971 4 224 2891",
           "google_rating": 4.5,
-          "google_review_count": 364,
+          "google_review_count": 391,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Dubai+Festival+City+Mall+AT-009",
           "coordinates": {
             "lat": 25.222402,
             "lng": 55.35521
           },
-          "rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/wgst1rg8nk3, collected 2026-11-19",
+          "rating_source": "Google Maps (Places), 2026-11-19",
           "reviews": [],
           "reviews_source": "Review texts not available from public pages we could read."
         },
@@ -162,11 +162,12 @@
           "address": "Ground Floor, Nakheel Mall, Centre of Palm, Palm Jumeirah, Dubai",
           "phone": "+971 4 447 5340",
           "google_rating": 4.8,
-          "google_review_count": 74,
+          "google_review_count": 75,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Nakheel+Mall+Palm+Jumeirah",
-          "rating_source": "Google Maps rating as listed on public directories citing Google (directory.pooyagolchian.com Palm Jumeirah Mall listing), collected 2026-11-19",
+          "rating_source": "Google Maps (Places), 2026-11-19",
           "reviews": [],
-          "reviews_source": "Review texts not available from public pages we could read."
+          "reviews_source": "Review texts not available from public pages we could read.",
+          "maps_note": "Maps name: Palm Jumeirah Mall (Nakheel Mall), Center of Palm"
         },
         {
           "showroom_name": "City Centre Mirdif",
@@ -175,9 +176,9 @@
           "address": "Shop 077, Entrance A, Level 1, City Centre Mirdif, Dubai",
           "phone": "+971 4 280 1212",
           "google_rating": 4.4,
-          "google_review_count": 302,
+          "google_review_count": 317,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+City+Centre+Mirdif",
-          "rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/w6c5mwn48xv, collected 2026-11-19",
+          "rating_source": "Google Maps (Places), 2026-11-19",
           "reviews": [],
           "reviews_source": "Review texts not available from public pages we could read."
         },
@@ -188,9 +189,9 @@
           "address": "Shop IBS-GF-B-G-15, India Court Extension, Ibn Battuta Mall, Dubai",
           "phone": "+971 4 589 8498",
           "google_rating": 4.7,
-          "google_review_count": 170,
+          "google_review_count": 182,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Ibn+Battuta+Mall",
-          "rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/08xsh6rwtc0, collected 2026-11-19",
+          "rating_source": "Google Maps (Places), 2026-11-19",
           "reviews": [],
           "reviews_source": "Review texts not available from public pages we could read."
         },
@@ -201,9 +202,9 @@
           "address": "Unit FF-017, Level 1, Dubai Marina Mall, Dubai",
           "phone": "+971 4 422 1411",
           "google_rating": 4.8,
-          "google_review_count": 277,
+          "google_review_count": 280,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Dubai+Marina+Mall+FF-017",
-          "rating_source": "Google Maps rating as listed on public place listings (exa.ai place library / heymalli / uaemallguide), collected 2026-11-19",
+          "rating_source": "Google Maps (Places), 2026-11-19",
           "reviews": [],
           "reviews_source": "Review texts not available from public pages we could read."
         },
@@ -214,13 +215,13 @@
           "address": "Store 020 and 021, First Floor, Yas Mall, Yas Island, Abu Dhabi",
           "phone": "+971 2 883 0903",
           "google_rating": 4.7,
-          "google_review_count": 335,
+          "google_review_count": 348,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Yas+Mall+Abu+Dhabi",
           "coordinates": {
             "lat": 24.488809,
             "lng": 54.608711
           },
-          "rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/jx05jt5df4g, collected 2026-11-19",
+          "rating_source": "Google Maps (Places), 2026-11-19",
           "reviews": [],
           "reviews_source": "Review texts not available from public pages we could read."
         },
@@ -230,14 +231,14 @@
           "emirate": "abu_dhabi",
           "address": "Shop 13220, 3rd Floor, The Galleria, Abu Dhabi",
           "phone": "+971 2 552 7333",
-          "google_rating": 4.3,
-          "google_review_count": 155,
+          "google_rating": 4.4,
+          "google_review_count": 182,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+The+Galleria+Abu+Dhabi",
           "coordinates": {
             "lat": 24.501535,
             "lng": 54.388759
           },
-          "rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/7z09pqrg297, collected 2026-11-19",
+          "rating_source": "Google Maps (Places), 2026-11-19",
           "reviews": [],
           "reviews_source": "Review texts not available from public pages we could read."
         },
@@ -248,13 +249,13 @@
           "address": "Unit GR-CS 18, Ground Floor, Dalma Mall, Abu Dhabi",
           "phone": "+971 2 551 1257",
           "google_rating": 4.4,
-          "google_review_count": 197,
+          "google_review_count": 207,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Dalma+Mall+Abu+Dhabi",
           "coordinates": {
             "lat": 24.334065,
             "lng": 54.523812
           },
-          "rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/g02p0d5csq7, collected 2026-11-19",
+          "rating_source": "Google Maps (Places), 2026-11-19",
           "reviews": [],
           "reviews_source": "Review texts not available from public pages we could read."
         },
@@ -264,14 +265,14 @@
           "emirate": "abu_dhabi",
           "address": "Al Jimi Mall, Hamdan Bin Mohammad Street, Al Jimi, Al Ain",
           "phone": "+971 3 762 0988",
-          "google_rating": 4.8,
-          "google_review_count": 66,
+          "google_rating": 4.9,
+          "google_review_count": 71,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Al+Jimi+Mall+Al+Ain",
           "coordinates": {
             "lat": 24.243347,
             "lng": 55.726527
           },
-          "rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/fjkt5zxnq4b, collected 2026-11-19",
+          "rating_source": "Google Maps (Places), 2026-11-19",
           "reviews": [],
           "reviews_source": "Review texts not available from public pages we could read."
         },
@@ -282,13 +283,13 @@
           "address": "Second floor, unit B002, City Centre Al Zahia, Sheikh Mohammed Bin Zayed Rd, Sharjah",
           "phone": "+971 6 546 4566",
           "google_rating": 4.8,
-          "google_review_count": 259,
+          "google_review_count": 268,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+City+Centre+Al+Zahia+Sharjah",
           "coordinates": {
             "lat": 25.31523,
             "lng": 55.455058
           },
-          "rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/xtkkz49j7x1, collected 2026-11-19",
+          "rating_source": "Google Maps (Places), 2026-11-19",
           "reviews": [],
           "reviews_source": "Review texts not available from public pages we could read."
         },
@@ -297,23 +298,27 @@
           "seller_id": "the-mattress-store",
           "emirate": "umm_al_quwain",
           "address": "Plot No. 1842, Al Aqran Street, Umm Dera New Industrial Area, Umm Al Quwain",
-          "phone": "800 46288",
+          "phone": "+971 50 185 9176",
           "google_rating": 4.5,
-          "google_review_count": 71,
+          "google_review_count": 92,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Outlet+Umm+Dera+Umm+Al+Quwain",
-          "rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/y6kmsgv54ts, collected 2026-11-19",
+          "rating_source": "Google Maps (Places), 2026-11-19",
           "reviews": [],
-          "reviews_source": "Review texts not available from public pages we could read."
+          "reviews_source": "Review texts not available from public pages we could read.",
+          "previous_phone": "800 46288",
+          "maps_note": "hours 10:00-24:00 daily"
         }
       ],
       "aggregate": {
         "google_rating": 4.56,
-        "google_review_count": 3465,
+        "google_review_count": 3680,
         "showrooms_with_rating": 15,
         "showrooms_total": 15,
         "method": "weighted_by_review_count",
         "formula": "sum(rating * count) / sum(count)"
       }
     }
-  }
+  },
+  "places_source": "Google Maps via PlacesSearch, collected 2026-11-19 ~22:15 Asia/Nicosia",
+  "places_note": "ratings+counts and phones only; Places tool returned no review texts"
 }

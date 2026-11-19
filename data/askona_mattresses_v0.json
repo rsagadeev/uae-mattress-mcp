@@ -1,7 +1,7 @@
 {
-  "catalog_version": "0.4.0",
+  "catalog_version": "0.4.1",
   "schema_version": "mattress-v0",
-  "generated_at": "2026-11-19T22:00:46+02:00",
+  "generated_at": "2026-11-19T22:10:39+02:00",
   "currency": "AED",
   "country": "AE",
   "firmness_scale": {
@@ -62,7 +62,7 @@
           "hours": "Monday to Thursday: 10 AM - 10 PM; Friday to Sunday 10 AM - 12 AM",
           "notes": "Delivery service center: +971 54 990 9538",
           "google_rating": 4.8,
-          "google_review_count": 72,
+          "google_review_count": 88,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Askona+Festival+City+Mall+Dubai&query_place_id=",
           "google_reviews": [
             {
@@ -101,7 +101,7 @@
               "source_url": "https://emiratesbz.com/dubai/askona-258738"
             }
           ],
-          "google_rating_source": "Google Maps rating as listed on public place pages (exa.ai/library/place/t4h4bmsfv7n and emiratesbz.com/dubai/askona-258738), collected 2026-11-19",
+          "google_rating_source": "Google Maps (Places), 2026-11-19",
           "google_reviews_source": "Public review mirror emiratesbz.com/dubai/askona-258738 (Google reviews republication). Star ratings were not always published on the mirror; they are stored only when the text itself states one. Author = first name only."
         },
         {
@@ -115,10 +115,10 @@
           "hours": "Monday to Thursday: 10 AM - 10 PM; Friday to Sunday 10 AM - 12 AM",
           "notes": "Delivery service center: +971 54 990 9538",
           "google_rating": 5.0,
-          "google_review_count": 126,
+          "google_review_count": 138,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Askona+Deerfields+Mall+Abu+Dhabi",
           "google_reviews": [],
-          "google_rating_source": "Google Maps rating as listed on uaemallguide.com/abu-dhabi/malls/deerfields-mall/askona1/ (explicitly “126 Google Maps reviews”), collected 2026-11-19",
+          "google_rating_source": "Google Maps (Places), 2026-11-19",
           "google_reviews_source": "No public review texts for this showroom were readable on the pages we could open (Maps connector unavailable; Maps HTML not reliably readable). Texts are not invented."
         }
       ],
@@ -219,11 +219,11 @@
       },
       "notes": "Delivery & assembly free (askona.ae/payment and for-buyers). Return window for satisfactory-quality goods on askona.ae/for-buyers is 15 days from receipt (proof of purchase, not custom-made, unopened and unused, not bought at a discounted/sale price). Standard warranty for mattresses is 18 months unless the product page says otherwise; extended warranty requires a branded protector as stated on the product. Showroom phones and hours from the official shop list on askona.ae (Deerfields Mall: +971 56 992 7721). Online store: +971 56 337 13 30. Payment methods from askona.ae/payment (Cash or Card on Delivery, Online Payment, Split Payment with Tamara or Tabby).",
       "store_reviews": {
-        "aggregate_rating": 4.93,
-        "aggregate_review_count": 198,
+        "aggregate_rating": 4.92,
+        "aggregate_review_count": 226,
         "method": "weighted_by_review_count",
-        "source_note": "PlacesSearch / Google Maps connector was not installed. Ratings and review counts are Google Maps figures as published on public place pages (exa.ai place library, mall directories, uaemallguide) on 2026-11-19. Representative review texts are included only when a public mirror published them; otherwise texts are omitted (not invented).",
-        "collected_at": "2026-11-19T22:30:00+02:00"
+        "source_note": "Showroom ratings, review counts and phones refreshed from Google Maps via PlacesSearch on 2026-11-19 (Asia/Nicosia). Places returned no new review texts; earlier representative texts from public mirrors are kept with their original sources.",
+        "collected_at": "2026-11-19T22:10:39+02:00"
       }
     },
     {
@@ -311,10 +311,10 @@
           ],
           "hours": "Please call the showroom; other mall showrooms that publish hours are typically 10:00 AM – 10:00 PM every day",
           "google_rating": 4.2,
-          "google_review_count": 109,
+          "google_review_count": 117,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Dubai+Mall+TDM-FF-087",
           "google_reviews": [],
-          "google_rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/lhqhpz10k4q, collected 2026-11-19",
+          "google_rating_source": "Google Maps (Places), 2026-11-19",
           "google_reviews_source": "Review texts not available from public pages we could read."
         },
         {
@@ -328,10 +328,10 @@
           "hours": "Monday–Friday 10:00 AM – 10:00 PM; Saturday–Sunday 10:00 AM – 12:00 AM",
           "notes": "Standalone showroom; latest weekend hours in the network",
           "google_rating": 4.5,
-          "google_review_count": 320,
+          "google_review_count": 346,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Eiffel+2+Sheikh+Zayed+Road+Dubai",
           "google_reviews": [],
-          "google_rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/blfxwj476h6, collected 2026-11-19",
+          "google_rating_source": "Google Maps (Places), 2026-11-19",
           "google_reviews_source": "Review texts not available from public pages we could read."
         },
         {
@@ -345,10 +345,10 @@
           "hours": "Every day, 10:00 AM – 10:00 PM (mall holiday hours may change)",
           "notes": "Street-front showroom",
           "google_rating": 4.4,
-          "google_review_count": 310,
+          "google_review_count": 314,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Umm+Suqeim+Road+Al+Barsha+Dubai",
           "google_reviews": [],
-          "google_rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/xncpvcfy2jx, collected 2026-11-19",
+          "google_rating_source": "Google Maps (Places), 2026-11-19",
           "google_reviews_source": "Review texts not available from public pages we could read."
         },
         {
@@ -361,10 +361,10 @@
           ],
           "hours": "Every day, 10:00 AM – 10:00 PM (mall holiday hours may change)",
           "google_rating": 4.6,
-          "google_review_count": 456,
+          "google_review_count": 490,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Dubai+Hills+Mall+Unit+232",
           "google_reviews": [],
-          "google_rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/yggjvtwdvgg, collected 2026-11-19",
+          "google_rating_source": "Google Maps (Places), 2026-11-19",
           "google_reviews_source": "Review texts not available from public pages we could read."
         },
         {
@@ -377,10 +377,10 @@
           ],
           "hours": "Every day, 10:00 AM – 10:00 PM (mall holiday hours may change)",
           "google_rating": 4.5,
-          "google_review_count": 364,
+          "google_review_count": 391,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Dubai+Festival+City+Mall+AT-009",
           "google_reviews": [],
-          "google_rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/wgst1rg8nk3, collected 2026-11-19",
+          "google_rating_source": "Google Maps (Places), 2026-11-19",
           "google_reviews_source": "Review texts not available from public pages we could read."
         },
         {
@@ -393,11 +393,12 @@
           ],
           "hours": "Every day, 10:00 AM – 10:00 PM (mall holiday hours may change)",
           "google_rating": 4.8,
-          "google_review_count": 74,
+          "google_review_count": 75,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Nakheel+Mall+Palm+Jumeirah",
           "google_reviews": [],
-          "google_rating_source": "Google Maps rating as listed on public directories citing Google (directory.pooyagolchian.com Palm Jumeirah Mall listing), collected 2026-11-19",
-          "google_reviews_source": "Review texts not available from public pages we could read."
+          "google_rating_source": "Google Maps (Places), 2026-11-19",
+          "google_reviews_source": "Review texts not available from public pages we could read.",
+          "notes": "Maps name: Palm Jumeirah Mall (Nakheel Mall), Center of Palm"
         },
         {
           "name": "City Centre Mirdif",
@@ -409,10 +410,10 @@
           ],
           "hours": "Every day, 10:00 AM – 10:00 PM (mall holiday hours may change)",
           "google_rating": 4.4,
-          "google_review_count": 302,
+          "google_review_count": 317,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+City+Centre+Mirdif",
           "google_reviews": [],
-          "google_rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/w6c5mwn48xv, collected 2026-11-19",
+          "google_rating_source": "Google Maps (Places), 2026-11-19",
           "google_reviews_source": "Review texts not available from public pages we could read."
         },
         {
@@ -425,10 +426,10 @@
           ],
           "hours": "Every day, 10:00 AM – 10:00 PM (mall holiday hours may change)",
           "google_rating": 4.7,
-          "google_review_count": 170,
+          "google_review_count": 182,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Ibn+Battuta+Mall",
           "google_reviews": [],
-          "google_rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/08xsh6rwtc0, collected 2026-11-19",
+          "google_rating_source": "Google Maps (Places), 2026-11-19",
           "google_reviews_source": "Review texts not available from public pages we could read."
         },
         {
@@ -441,10 +442,10 @@
           ],
           "hours": "Every day, 10:00 AM – 10:00 PM (mall holiday hours may change)",
           "google_rating": 4.8,
-          "google_review_count": 277,
+          "google_review_count": 280,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Dubai+Marina+Mall+FF-017",
           "google_reviews": [],
-          "google_rating_source": "Google Maps rating as listed on public place listings (exa.ai place library / heymalli / uaemallguide), collected 2026-11-19",
+          "google_rating_source": "Google Maps (Places), 2026-11-19",
           "google_reviews_source": "Review texts not available from public pages we could read."
         },
         {
@@ -458,10 +459,10 @@
           "hours": "Every day, 10:00 AM – 10:00 PM (mall holiday hours may change)",
           "notes": "Englander and Vispring display areas",
           "google_rating": 4.7,
-          "google_review_count": 335,
+          "google_review_count": 348,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Yas+Mall+Abu+Dhabi",
           "google_reviews": [],
-          "google_rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/jx05jt5df4g, collected 2026-11-19",
+          "google_rating_source": "Google Maps (Places), 2026-11-19",
           "google_reviews_source": "Review texts not available from public pages we could read."
         },
         {
@@ -473,11 +474,11 @@
             "+971 2 552 7333"
           ],
           "hours": "Every day, 10:00 AM – 10:00 PM",
-          "google_rating": 4.3,
-          "google_review_count": 155,
+          "google_rating": 4.4,
+          "google_review_count": 182,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+The+Galleria+Abu+Dhabi",
           "google_reviews": [],
-          "google_rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/7z09pqrg297, collected 2026-11-19",
+          "google_rating_source": "Google Maps (Places), 2026-11-19",
           "google_reviews_source": "Review texts not available from public pages we could read."
         },
         {
@@ -490,10 +491,10 @@
           ],
           "hours": "Every day, 10:00 AM – 10:00 PM",
           "google_rating": 4.4,
-          "google_review_count": 197,
+          "google_review_count": 207,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Dalma+Mall+Abu+Dhabi",
           "google_reviews": [],
-          "google_rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/g02p0d5csq7, collected 2026-11-19",
+          "google_rating_source": "Google Maps (Places), 2026-11-19",
           "google_reviews_source": "Review texts not available from public pages we could read."
         },
         {
@@ -506,11 +507,11 @@
           ],
           "hours": "Please call the showroom for operating hours",
           "notes": "Al Ain",
-          "google_rating": 4.8,
-          "google_review_count": 66,
+          "google_rating": 4.9,
+          "google_review_count": 71,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Al+Jimi+Mall+Al+Ain",
           "google_reviews": [],
-          "google_rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/fjkt5zxnq4b, collected 2026-11-19",
+          "google_rating_source": "Google Maps (Places), 2026-11-19",
           "google_reviews_source": "Review texts not available from public pages we could read."
         },
         {
@@ -524,27 +525,28 @@
           "hours": "Every day, 10:00 AM – 10:00 PM",
           "notes": "Near Entrance C; mall parking Level 2 East, Gate 3",
           "google_rating": 4.8,
-          "google_review_count": 259,
+          "google_review_count": 268,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+City+Centre+Al+Zahia+Sharjah",
           "google_reviews": [],
-          "google_rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/xtkkz49j7x1, collected 2026-11-19",
+          "google_rating_source": "Google Maps (Places), 2026-11-19",
           "google_reviews_source": "Review texts not available from public pages we could read."
         },
         {
           "name": "The Mattress Store Outlet — Umm Dera",
           "emirate": "umm_al_quwain",
           "address": "Plot No. 1842, Al Aqran Street, Umm Dera New Industrial Area, Umm Al Quwain",
-          "phone": "800 46288",
+          "phone": "+971 50 185 9176",
           "phones": [
+            "+971 50 185 9176",
             "800 46288"
           ],
-          "hours": "Hours not published on the showroom page; call 800 IMATT (46288)",
-          "notes": "Warehouse/outlet. Individual showroom phone not published; use 800 IMATT (46288). This is also the address printed in the site footer.",
+          "hours": "10:00–24:00 daily (as listed on Google Maps, 2026-11-19)",
+          "notes": "Warehouse/outlet. Site footer and showroom page list 800 IMATT (46288). Google Maps lists a direct showroom phone +971 50 185 9176 (refreshed 2026-11-19); both numbers are kept.",
           "google_rating": 4.5,
-          "google_review_count": 71,
+          "google_review_count": 92,
           "google_maps_url": "https://www.google.com/maps/search/?api=1&query=The+Mattress+Store+Outlet+Umm+Dera+Umm+Al+Quwain",
           "google_reviews": [],
-          "google_rating_source": "Google Maps rating as listed on public place page exa.ai/library/place/y6kmsgv54ts, collected 2026-11-19",
+          "google_rating_source": "Google Maps (Places), 2026-11-19",
           "google_reviews_source": "Review texts not available from public pages we could read."
         }
       ],
@@ -644,10 +646,10 @@
       "notes": "Multi-brand retailer (not a manufacturer). Legal name and company registration 683077 from Terms of Service (registered office: Unit No. 1, 211 Umm Suqeim Street, Dubai). Terms list cash, bank transfer, card (Maestro, Visa, Mastercard, American Express) and Tabby; the site footer also shows Tamara, Apple Pay, Google Pay, JCB, Discover, Diners Club and Cash. Cash is treated as in-store only: terms say goods are not delivered until full payment is received, so cash on delivery is not listed. Vispring Comfort Promise (one-time spring-tension exchange, 30–90 days) applies only to in-store purchases from a specialist with display beds, not internet purchases. The company also operates luxury brand boutiques (Hästens, Armani/Casa, Bentley Home, Bugatti Home, Rolf Benz) which are not listed as mattress showrooms here. Standard delivery is free across the UAE.",
       "store_reviews": {
         "aggregate_rating": 4.56,
-        "aggregate_review_count": 3465,
+        "aggregate_review_count": 3680,
         "method": "weighted_by_review_count",
-        "source_note": "PlacesSearch / Google Maps connector was not installed. Ratings and review counts are Google Maps figures as published on public place pages (exa.ai place library, mall directories, uaemallguide) on 2026-11-19. Representative review texts are included only when a public mirror published them; otherwise texts are omitted (not invented).",
-        "collected_at": "2026-11-19T22:30:00+02:00"
+        "source_note": "Showroom ratings, review counts and phones refreshed from Google Maps via PlacesSearch on 2026-11-19 (Asia/Nicosia). Places returned no new review texts; earlier representative texts from public mirrors are kept with their original sources.",
+        "collected_at": "2026-11-19T22:10:39+02:00"
       }
     }
   ],
@@ -54420,6 +54422,8 @@
       "tms": "Judge.me widget on themattressstore.com",
       "stores": "Google Maps ratings via public listings; see data/store_reviews_public.json"
     },
-    "built_at": "2026-11-19T22:00:46+02:00"
+    "built_at": "2026-11-19T22:00:46+02:00",
+    "maps_refresh_at": "2026-11-19T22:10:39+02:00",
+    "maps_source": "Google Maps via PlacesSearch, collected 2026-11-19 ~22:15 Asia/Nicosia"
   }
 }
