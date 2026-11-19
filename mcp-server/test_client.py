@@ -26,6 +26,15 @@ CALLS = [
     ("compare_products", {"product_ids": ["englander:bodiform-gel-tight-top", "sleep-professor:arizona-duo"],
                           "size": "160x200"}),
     ("search", {"query": "medium firm mattress 160x200 under 2000 AED delivered to Abu Dhabi, pay with Tabby"}),
+    ("search_mattresses", {"sleep_position": "side", "sleeper_weight_kg": 90, "couple": True,
+                           "size": "160x200", "price_max": 3000, "sort": "price_asc",
+                           "limit": 5, "one_per_product": True}),
+    ("get_reviews", {"product_id": "askona:classic-brilliant-duo", "limit": 5}),
+    ("get_reviews", {"product_id": "sleep-professor:arizona-duo", "limit": 3}),
+    ("get_reviews", {"product_id": "englander:bodiform-gel-tight-top", "with_photos_only": True, "limit": 5}),
+    ("get_seller_reviews", {"seller_id": "askona-gulf"}),
+    ("get_seller_reviews", {"seller_id": "the-mattress-store", "showroom": "Festival City"}),
+    ("search", {"query": "side sleeper 90 kg couple 160x200 under 3000 AED"}),
 ]
 
 
@@ -54,7 +63,9 @@ async def main():
                     print("total:", sc["total_matching_offers"], "notes:", sc.get("notes"))
                     for x in sc["results"]:
                         print(f"  [{x.get('seller')}] {x['name']} {x['size']} firm={x['firmness'].get('scale_1_10') or [y['scale_1_10'] for y in x['firmness'].get('sides', [])]} "
-                              f"{x['regular_price_aed']}->{x['current_price_aed']} AED until {x['sale_ends']} | {x['availability']} | {x['delivery']} | {x['url']}")
+                              f"{x['regular_price_aed']}->{x['current_price_aed']} AED until {x['sale_ends']} | {x['availability']} | "
+                              f"rating={x.get('rating')} ({x.get('review_count')}) side={((x.get('fit') or {}).get('side') or {}).get('label')} "
+                              f"couples={((x.get('fit') or {}).get('couples') or {}).get('label')} | {x['delivery']} | {x['url']}")
                 elif name == "search" and sc:
                     for x in sc["results"]:
                         print("  ", x)

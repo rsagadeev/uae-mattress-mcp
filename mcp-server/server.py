@@ -279,7 +279,121 @@ def offer_row(o: dict, emirate: str | None = None) -> dict:
         "url": o.get("url"),
         "last_updated": o.get("last_updated"),
     }
+    rat = product_rating(p)
+    row["rating"] = rat.get("value")
+    row["review_count"] = rat.get("count")
+    if rat.get("note"):
+        row["reviews_note"] = rat["note"]
+    row["fit"] = compact_fit(p)
     return row
+
+
+def product_rating(p: dict) -> dict:
+    r = p.get("rating") or {}
+    revs = p.get("reviews") or {}
+    if revs.get("zero_reviews") or (revs.get("count") == 0 and not r.get("count")):
+        return {"value": None, "count": 0, "note": "no customer reviews on the brand site"}
+    if r.get("count"):
+        return {"value": r.get("value"), "count": r.get("count"), "source": r.get("source")}
+    return {"value": revs.get("average"), "count": revs.get("count") or 0, "source": revs.get("source")}
+
+
+def _lab(a: dict | None) -> dict | None:
+    if not a:
+        return None
+    out = {k: a.get(k) for k in ("label", "score", "provenance") if a.get(k) is not None}
+    return out or None
+
+
+def compact_fit(p: dict) -> dict:
+    fit = p.get("fit") or {}
+    pos = fit.get("sleep_positions") or {}
+    w = fit.get("sleeper_weight_kg") or {}
+    vfm = fit.get("value_for_money") or {}
+    return {
+        "sleeper_weight": {k: w.get(k) for k in ("min_kg", "max_kg", "label", "provenance") if w.get(k) is not None},
+        "side": _lab(pos.get("side")),
+        "back": _lab(pos.get("back")),
+        "stomach": _lab(pos.get("stomach")),
+        "motion_isolation": _lab(fit.get("motion_isolation")),
+        "couples": _lab(fit.get("couples")),
+        "hot_sleepers": _lab(fit.get("hot_sleepers")),
+        "back_pain_orthopedic": _lab(fit.get("back_pain_orthopedic")),
+        "firm_lovers": _lab(fit.get("firm_lovers")),
+        "value_for_money": {k: vfm.get(k) for k in ("index", "band", "provenance") if vfm.get(k) is not None},
+    }
+
+
+def _fit_score_ok(attr: dict | None, min_label: str = "ok") -> bool:
+    if not attr:
+        return False
+    order = {"poor": 0, "ok": 1, "good": 2}
+    if attr.get("label") in order:
+        return order[attr["label"]] >= order.get(min_label, 1)
+    return (attr.get("score") or 0) >= 0.34
+
+
+def weight_fits(p: dict, kg: float) -> bool:
+    w = (p.get("fit") or {}).get("sleeper_weight_kg") or {}
+    lo, hi = w.get("min_kg"), w.get("max_kg")
+    if lo is not None and kg < float(lo):
+        return False
+    if hi is not None and kg > float(hi):
+        return False
+    return lo is not None or hi is not None
+
+
+def compact_review(r: dict) -> dict:
+    return {
+        "author": r.get("author"),
+        "date": r.get("date"),
+        "rating": r.get("rating"),
+        "text": r.get("text"),
+        "verified": r.get("verified"),
+        "photo_urls": r.get("photo_urls") or [],
+    }
+
+
+def compact_review_block(p: dict, limit: int = 5, with_photos_only: bool = False) -> dict:
+    block = p.get("reviews") or {}
+    reviews = list(block.get("reviews") or [])
+    if with_photos_only:
+        reviews = [r for r in reviews if r.get("photo_urls")]
+    return {
+        "average": block.get("average"),
+        "count": block.get("count") or 0,
+        "has_photos": block.get("has_photos"),
+        "photo_count": block.get("photo_count") or 0,
+        "zero_reviews": bool(block.get("zero_reviews") or (block.get("count") or 0) == 0),
+        "summary": (block.get("summary") or {}).get("text"),
+        "pros": (block.get("summary") or {}).get("pros") or [],
+        "cons": (block.get("summary") or {}).get("cons") or [],
+        "source": block.get("source"),
+        "reviews": [compact_review(r) for r in reviews[: max(0, int(limit or 5))]],
+    }
+
+
+def seller_store_ratings(seller_id: str) -> dict:
+    s = SELLERS.get(seller_id) or {}
+    agg = s.get("store_reviews") or {}
+    rooms = []
+    for sh in s.get("showrooms") or []:
+        rooms.append({
+            "name": sh.get("name"),
+            "emirate": sh.get("emirate"),
+            "google_rating": sh.get("google_rating"),
+            "google_review_count": sh.get("google_review_count"),
+            "google_maps_url": sh.get("google_maps_url"),
+        })
+    return {
+        "seller_id": seller_id,
+        "name": s.get("name"),
+        "aggregate_rating": agg.get("aggregate_rating"),
+        "aggregate_review_count": agg.get("aggregate_review_count"),
+        "method": agg.get("method"),
+        "showrooms": rooms,
+    }
+
 
 
 def catalog_meta() -> dict:
@@ -294,7 +408,9 @@ def _search(query: str | None = None, firmness_min: float | None = None, firmnes
             price_max: float | None = None, construction_type: str | None = None, audience: str | None = None,
             brand: str | None = None, seller: str | None = None, emirate: str | None = None, payment_method: str | None = None,
             features: list[str] | None = None, in_stock_only: bool = False, sort: str = "relevance",
-            limit: int = 10, one_per_product: bool = False) -> dict:
+            limit: int = 10, one_per_product: bool = False,
+            sleep_position: str | None = None, sleeper_weight_kg: float | None = None,
+            min_rating: float | None = None, couple: bool = False, motion_isolation: bool = False) -> dict:
     notes: list[str] = []
     want_size = parse_size(size)
     if size and not want_size:
@@ -386,6 +502,20 @@ def _search(query: str | None = None, firmness_min: float | None = None, firmnes
             continue
         if in_stock_only and o.get("availability") != "in_stock":
             continue
+        if sleep_position:
+            pos = ((p.get("fit") or {}).get("sleep_positions") or {}).get(sleep_position)
+            if not _fit_score_ok(pos):
+                continue
+        if sleeper_weight_kg is not None and not weight_fits(p, float(sleeper_weight_kg)):
+            continue
+        if min_rating is not None:
+            rat = product_rating(p)
+            if rat.get("value") is None or rat.get("count") in (None, 0) or float(rat["value"]) < float(min_rating):
+                continue
+        if couple and not _fit_score_ok((p.get("fit") or {}).get("couples")):
+            continue
+        if motion_isolation and not _fit_score_ok((p.get("fit") or {}).get("motion_isolation")):
+            continue
         score = 0.0
         if qtokens:
             pid = p["product_id"]
@@ -414,6 +544,9 @@ def _search(query: str | None = None, firmness_min: float | None = None, firmnes
         rows.sort(key=lambda r: (-(max(r[2]) if r[2] else -1), -(min(r[2]) if r[2] else -1), r[1]))
     elif sort == "firmness_asc":
         rows.sort(key=lambda r: ((min(r[2]) if r[2] else 99), r[1]))
+    elif sort == "rating_desc":
+        rows.sort(key=lambda r: (-(product_rating(VARIANTS[r[3]["variant_id"]][0]).get("value") or 0),
+                                  -(product_rating(VARIANTS[r[3]["variant_id"]][0]).get("count") or 0), r[1]))
     else:
         rows.sort(key=lambda r: (-r[0], r[1]))
 
@@ -455,8 +588,14 @@ INSTRUCTIONS = (
     "date when recommending. Never invent missing fields: null means the seller did not publish it — say so. "
     "Firmness uses a normalized 1-10 scale (1 softest, 10 firmest) derived from brand wording, not lab-measured; "
     "dual-sided mattresses list both sides. "
-    "Typical flow: list_filters (optional) -> search_mattresses with structured filters -> get_product or "
-    "compare_products for details -> get_seller_policies for delivery, payment (Tabby/Tamara/COD), returns. "
+    "Typical flow: list_filters (optional) -> search_mattresses with structured filters (sleep_position, "
+    "sleeper_weight_kg, min_rating, couple, motion_isolation) -> get_product or compare_products for details -> "
+    "get_reviews / get_seller_reviews for review texts and photo URLs -> get_seller_policies for delivery, "
+    "payment (Tabby/Tamara/COD), returns and store ratings. "
+    "Semantic fit attributes always carry provenance: brand_stated, derived_rule, or from_reviews. "
+    "Never present derived_rule or from_reviews values as brand claims, and never invent reviews. "
+    "If review count is 0, say explicitly that the brand site has no customer reviews. "
+    "Customer photos are original hosted URLs — do not claim they are stored here. "
     "This is a test catalog snapshot; the buyer completes purchase on the url provided."
 )
 
@@ -464,7 +603,7 @@ mcp = MCPServer(
     name="uae-mattress-catalog",
     title="UAE Mattress Catalog (agent-first, pilot)",
     instructions=INSTRUCTIONS,
-    version="0.3.0",
+    version="0.4.0",
 )
 RO = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
 
@@ -478,7 +617,9 @@ RO = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=Tr
         "firmness (1-10), size, height, construction, availability, delivery for the requested emirate, and the "
         "purchase url. Prefer structured filters over free text. Firmness guide: soft 1-4, medium 4.5-6.5, "
         "firm 7-8, extra firm 9-10; dual-sided products match if either side is in range. Price filters apply "
-        "to the current (sale-aware) price."),
+        "to the current (sale-aware) price. Results include rating+review count and compact semantic fit "
+        "(weight range, sleep positions, couples, motion isolation, value index). Fit labels that are "
+        "derived_rule or from_reviews are not brand claims."),
 )
 def search_mattresses(
     query: Annotated[str | None, Field(description="Optional free-text keywords (model name, material, e.g. 'latex', 'Arizona'). Used for relevance ranking.")] = None,
@@ -497,12 +638,19 @@ def search_mattresses(
     payment_method: Annotated[Literal["tabby", "tamara", "cod", "card"] | None, Field(description="Required payment option. cod = cash or card on delivery.")] = None,
     features: Annotated[list[str] | None, Field(description="Required features (all must be true): cooling, orthopedic, memory_foam, zoned_support, edge_support, motion_isolation, hypoallergenic_antibacterial, removable_cover, flippable.")] = None,
     in_stock_only: Annotated[bool, Field(description="Only offers explicitly marked in stock (many are 'unknown').")] = False,
-    sort: Annotated[Literal["relevance", "price_asc", "price_desc", "firmness", "firmness_asc"], Field(description="'firmness' = firmest first; 'firmness_asc' = softest first.")] = "relevance",
+    sort: Annotated[Literal["relevance", "price_asc", "price_desc", "firmness", "firmness_asc", "rating_desc"], Field(description="'firmness' = firmest first; 'firmness_asc' = softest first; 'rating_desc' = highest review rating first.")] = "relevance",
     limit: Annotated[int, Field(ge=1, le=50, description="Max results (default 10).")] = 10,
     one_per_product: Annotated[bool, Field(description="Return at most one offer (best-ranked size) per model.")] = False,
+    sleep_position: Annotated[Literal["side", "back", "stomach", "combination"] | None,
+                              Field(description="Keep models rated ok/good for this sleep position (semantic fit).")] = None,
+    sleeper_weight_kg: Annotated[float | None, Field(ge=10, le=250, description="Sleeper body weight in kg; keeps models whose fit weight range includes this value.")] = None,
+    min_rating: Annotated[float | None, Field(ge=1, le=5, description="Minimum average product review rating (1-5). Products with zero reviews are excluded.")] = None,
+    couple: Annotated[bool, Field(description="If true, keep models rated ok/good for couples (motion isolation + queen+ / duo).")] = False,
+    motion_isolation: Annotated[bool, Field(description="If true, keep models rated ok/good for partner motion isolation.")] = False,
 ) -> dict[str, Any]:
     return _search(query, firmness_min, firmness_max, size, size_class, price_min, price_max, construction_type,
-                   audience, brand, seller, emirate, payment_method, features, in_stock_only, sort, limit, one_per_product)
+                   audience, brand, seller, emirate, payment_method, features, in_stock_only, sort, limit, one_per_product,
+                   sleep_position, sleeper_weight_kg, min_rating, couple, motion_isolation)
 
 
 def _product_full(p: dict, size: str | None = None) -> dict:
@@ -539,8 +687,13 @@ def _product_full(p: dict, size: str | None = None) -> dict:
         "age_range": age_range(p), "trial_nights": p.get("trial_nights"),
         "country_of_origin": p.get("country_of_origin"), "certifications": p.get("certifications"),
         "description": p.get("description"), "images": (p.get("images") or [])[:4],
+        "rating": product_rating(p),
+        "fit": p.get("fit"),
+        "reviews": compact_review_block(p, limit=5),
+        "seller_store_ratings": [seller_store_ratings(sid) for sid in
+                                 sorted({o["seller_id"] for o in OFFERS_BY_PRODUCT.get(p["product_id"], [])})],
         "offers": offers,
-        "seller_policies_hint": "Call get_seller_policies(seller_id) for delivery by emirate, payment and returns.",
+        "seller_policies_hint": "Call get_seller_policies(seller_id) for delivery by emirate, payment and returns. Call get_reviews or get_seller_reviews for more review texts.",
         "raw_brand_attributes": p.get("raw_brand_attributes"),
         "source": p.get("source"), "last_updated": p.get("last_updated"),
     }
@@ -563,7 +716,7 @@ def _resolve_product(pid: str) -> dict | None:
 
 @mcp.tool(title="Get mattress details", annotations=RO, description=(
     "Use this to get full details of one mattress model: all sizes with regular/current AED prices and urls, "
-    "firmness, layers, fillers, features with evidence quotes, warranty, max load, source url and last_updated. "
+    "firmness, layers, fillers, semantic fit with provenance, review summary plus up to 5 reviews with photo URLs, seller store ratings, warranty, max load, source url and last_updated. Fit values with provenance derived_rule or from_reviews are not brand claims. "
     "Accepts a product_id (e.g. 'sleep-professor:arizona-duo'), an offer_id or variant_id."))
 def get_product(
     product_id: Annotated[str, Field(description="product_id from search results (offer_id/variant_id also accepted).")],
@@ -600,6 +753,8 @@ def compare_products(
         col = {"product_id": p["product_id"], "name": p["name"]}
         col.update({k: p.get(k) for k in COMPARE_FIELDS})
         col["firmness"] = firmness_summary(p)
+        col["rating"] = product_rating(p)
+        col["fit"] = compact_fit(p)
         col["layers"] = [l["material"] for l in p.get("layers") or []]
         col["features_true"] = sorted(product_features(p))
         col["warranty"] = p.get("warranty")
@@ -659,6 +814,7 @@ def get_seller_policies(
             "services": s.get("default_services"), "return_policy": s.get("return_policy"),
             "warranty_policy_url": s.get("warranty_policy_url"), "notes": s.get("notes"),
             "source": s.get("source"),
+            "store_reviews": seller_store_ratings(s["seller_id"]),
         })
     out: dict[str, Any] = {"sellers": res, "catalog": catalog_meta()}
     if seller_id and seller_id not in SELLERS:
@@ -692,8 +848,87 @@ def list_filters() -> dict[str, Any]:
         "emirates_with_confirmed_delivery": em,
         "payment_methods": pm,
         "features_true_counts": dict(feat),
+        "semantic_filters": {
+            "sleep_position": ["side", "back", "stomach", "combination"],
+            "sleeper_weight_kg": "number, matches models whose fit weight range includes the value",
+            "min_rating": "1-5, excludes products with zero reviews",
+            "couple": "boolean, ok/good for couples",
+            "motion_isolation": "boolean, ok/good partner-motion isolation",
+        },
         "catalog": catalog_meta(),
     }
+
+
+
+
+@mcp.tool(title="Get product reviews", annotations=RO, description=(
+    "Use this for customer reviews of one mattress: average rating, count, short pros/cons, and review texts "
+    "with author first name/initial, date, rating, verified flag and original customer photo URLs. "
+    "If the product has zero reviews, the response says so explicitly — do not invent reviews. "
+    "Set with_photos_only to keep only reviews that include a photo."))
+def get_reviews(
+    product_id: Annotated[str, Field(description="product_id (offer_id/variant_id also accepted).")],
+    with_photos_only: Annotated[bool, Field(description="If true, only reviews that include customer photo URLs.")] = False,
+    limit: Annotated[int, Field(ge=1, le=30, description="Max review texts to return (default 5).")] = 5,
+) -> dict[str, Any]:
+    p = _resolve_product(product_id)
+    if not p:
+        return {"error": f"Unknown product_id '{product_id}'. Use search_mattresses to find valid ids."}
+    block = compact_review_block(p, limit=limit, with_photos_only=with_photos_only)
+    return {
+        "product_id": p["product_id"],
+        "name": p["name"],
+        "source_url": (p.get("reviews") or {}).get("source_url") or (p.get("source") or {}).get("url"),
+        **block,
+        "catalog": catalog_meta(),
+    }
+
+
+@mcp.tool(title="Get seller / showroom reviews", annotations=RO, description=(
+    "Use this for Google Maps ratings of seller showrooms: aggregate rating weighted by review count, "
+    "per-showroom rating and count, the Maps place URL, and a few representative recent reviews when a "
+    "public source published the text. Omit seller_id for both pilot sellers. Do not invent missing review texts."))
+def get_seller_reviews(
+    seller_id: Annotated[str | None, Field(description="Seller id, e.g. 'askona-gulf' or 'the-mattress-store'. Omit for all.")] = None,
+    showroom: Annotated[str | None, Field(description="Optional showroom name substring, e.g. 'Festival City' or 'Deerfields'.")] = None,
+) -> dict[str, Any]:
+    sellers = [SELLERS[seller_id]] if seller_id in SELLERS else list(SELLERS.values())
+    out = []
+    needle = (showroom or "").strip().lower()
+    for s in sellers:
+        rooms = []
+        for sh in s.get("showrooms") or []:
+            if needle and needle not in (sh.get("name") or "").lower() and needle not in (sh.get("address") or "").lower():
+                continue
+            reviews = [compact_review(r) for r in (sh.get("google_reviews") or [])[:5]]
+            rooms.append({
+                "name": sh.get("name"),
+                "emirate": sh.get("emirate"),
+                "address": sh.get("address"),
+                "phone": sh.get("phone") or (sh.get("phones") or [None])[0],
+                "google_rating": sh.get("google_rating"),
+                "google_review_count": sh.get("google_review_count"),
+                "google_maps_url": sh.get("google_maps_url"),
+                "rating_source": sh.get("google_rating_source"),
+                "reviews_source": sh.get("google_reviews_source"),
+                "reviews": reviews,
+                "review_texts_available": bool(reviews),
+            })
+        agg = s.get("store_reviews") or {}
+        out.append({
+            "seller_id": s["seller_id"],
+            "name": s.get("name"),
+            "aggregate_rating": agg.get("aggregate_rating"),
+            "aggregate_review_count": agg.get("aggregate_review_count"),
+            "method": agg.get("method"),
+            "source_note": agg.get("source_note"),
+            "collected_at": agg.get("collected_at"),
+            "showrooms": rooms,
+        })
+    res: dict[str, Any] = {"sellers": out, "catalog": catalog_meta()}
+    if seller_id and seller_id not in SELLERS:
+        res["notes"] = [f"Unknown seller_id '{seller_id}'; returning all sellers."]
+    return res
 
 
 # ----------------------------------------------------------------------------- ChatGPT search/fetch compat
@@ -753,6 +988,21 @@ def parse_free_text(q: str) -> dict:
         f["sort"] = "firmness"
     elif any(w in ql for w in ["cheapest", "cheap", "lowest price", "budget", "дешев"]):
         f["sort"] = "price_asc"
+    if any(w in ql for w in ["side sleeper", "sleep on my side", "sleep on the side", "на боку"]):
+        f["sleep_position"] = "side"
+    elif any(w in ql for w in ["stomach sleeper", "sleep on my stomach", "на живот"]):
+        f["sleep_position"] = "stomach"
+    elif any(w in ql for w in ["back sleeper", "sleep on my back", "на спине"]):
+        f["sleep_position"] = "back"
+    m = re.search(r"(\d{2,3})\s*(?:kg|килограмм|кг)\b", ql)
+    if m:
+        f["sleeper_weight_kg"] = float(m.group(1))
+    if any(w in ql for w in ["couple", "couples", "partner", "для пар", "изоляц"]):
+        f["couple"] = True
+        f["motion_isolation"] = True
+    m = re.search(r"(?:rating|rated|stars|оценка)\s*(?:at least|over|≥|>=)?\s*(\d(?:[.,]\d)?)", ql)
+    if m:
+        f["min_rating"] = float(m.group(1).replace(",", "."))
     return f
 
 

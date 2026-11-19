@@ -54,6 +54,12 @@
       "items": {
         "$ref": "#/$defs/offer"
       }
+    },
+    "v040_meta": {
+      "type": "object"
+    },
+    "changelog": {
+      "type": "array"
     }
   },
   "$defs": {
@@ -269,6 +275,33 @@
               },
               "notes": {
                 "type": "string"
+              },
+              "google_rating": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "google_review_count": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "google_maps_url": {
+                "type": "string"
+              },
+              "google_reviews": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/product_review"
+                }
+              },
+              "google_rating_source": {
+                "type": "string"
+              },
+              "google_reviews_source": {
+                "type": "string"
               }
             }
           }
@@ -330,6 +363,32 @@
               "phone": {
                 "type": "string"
               }
+            }
+          }
+        },
+        "store_reviews": {
+          "type": "object",
+          "properties": {
+            "aggregate_rating": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "aggregate_review_count": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "method": {
+              "type": "string"
+            },
+            "source_note": {
+              "type": "string"
+            },
+            "collected_at": {
+              "type": "string"
             }
           }
         }
@@ -793,6 +852,9 @@
             "count": {
               "type": "integer"
             },
+            "scale_max": {
+              "type": "integer"
+            },
             "source": {
               "type": "string"
             }
@@ -860,6 +922,116 @@
             }
           },
           "description": "Age recommendation parsed from brand badges/description (kids mattresses)."
+        },
+        "fit": {
+          "type": "object",
+          "properties": {
+            "sleeper_weight_kg": {
+              "$ref": "#/$defs/fit_attribute"
+            },
+            "sleep_positions": {
+              "type": "object",
+              "properties": {
+                "side": {
+                  "$ref": "#/$defs/fit_attribute"
+                },
+                "back": {
+                  "$ref": "#/$defs/fit_attribute"
+                },
+                "stomach": {
+                  "$ref": "#/$defs/fit_attribute"
+                },
+                "combination": {
+                  "$ref": "#/$defs/fit_attribute"
+                }
+              }
+            },
+            "motion_isolation": {
+              "$ref": "#/$defs/fit_attribute"
+            },
+            "firm_lovers": {
+              "$ref": "#/$defs/fit_attribute"
+            },
+            "soft_lovers": {
+              "$ref": "#/$defs/fit_attribute"
+            },
+            "hot_sleepers": {
+              "$ref": "#/$defs/fit_attribute"
+            },
+            "back_pain_orthopedic": {
+              "$ref": "#/$defs/fit_attribute"
+            },
+            "couples": {
+              "$ref": "#/$defs/fit_attribute"
+            },
+            "edge_support": {
+              "$ref": "#/$defs/fit_attribute"
+            },
+            "value_for_money": {
+              "$ref": "#/$defs/fit_attribute"
+            },
+            "disclaimer": {
+              "type": "string"
+            }
+          }
+        },
+        "reviews": {
+          "type": "object",
+          "properties": {
+            "average": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "count": {
+              "type": "integer"
+            },
+            "scale_max": {
+              "type": "integer"
+            },
+            "source": {
+              "type": "string"
+            },
+            "source_url": {
+              "type": "string"
+            },
+            "has_photos": {
+              "type": "boolean"
+            },
+            "photo_count": {
+              "type": "integer"
+            },
+            "summary": {
+              "type": "object",
+              "properties": {
+                "pros": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "cons": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "text": {
+                  "type": "string"
+                }
+              }
+            },
+            "reviews": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/product_review"
+              }
+            },
+            "zero_reviews": {
+              "type": "boolean"
+            }
+          }
         }
       }
     },
@@ -1057,6 +1229,147 @@
           ],
           "minimum": 0,
           "description": "Minimum product-level lead time in days parsed from delivery_note (e.g. 'no earlier than 10 days'). Null if the listing has no such note."
+        }
+      }
+    },
+    "fit_attribute": {
+      "type": "object",
+      "properties": {
+        "score": {
+          "type": "number"
+        },
+        "label": {
+          "type": "string"
+        },
+        "min_kg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "max_kg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "index": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "band": {
+          "type": "string"
+        },
+        "provenance": {
+          "type": "string",
+          "enum": [
+            "brand_stated",
+            "derived_rule",
+            "from_reviews"
+          ]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "rule": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "quote": {
+          "type": "string"
+        },
+        "supporting_review_count": {
+          "type": "integer"
+        },
+        "supporting": {
+          "type": "string"
+        },
+        "peer_count": {
+          "type": "integer"
+        },
+        "peer_group": {
+          "type": "string"
+        },
+        "basis_size": {
+          "type": "string"
+        },
+        "price_aed": {
+          "type": "number"
+        },
+        "peer_median_price_aed": {
+          "type": "number"
+        },
+        "spec_score": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "provenance",
+        "confidence"
+      ]
+    },
+    "product_review": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "author": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "date": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rating": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "text": {
+          "type": "string"
+        },
+        "verified": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "photo_urls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "advantages": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "disadvantages": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "type": "string"
+        },
+        "source_url": {
+          "type": "string"
         }
       }
     }
