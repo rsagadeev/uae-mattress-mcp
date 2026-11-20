@@ -25,6 +25,7 @@ DATA_PATH = Path(os.environ.get(
     Path(__file__).resolve().parent.parent / "data" / "askona_mattresses_v0.json",
 ))
 UAE_TZ = timezone(timedelta(hours=4))
+SERVER_VERSION = "0.5.0"
 
 # ----------------------------------------------------------------------------- data
 CAT: dict[str, Any] = json.loads(DATA_PATH.read_text(encoding="utf-8"))
@@ -244,7 +245,7 @@ def age_range(p: dict) -> str | None:
     return None
 
 
-def offer_row(o: dict, emirate: str | None = None) -> dict:
+def offer_row(o: dict, emirate: str | None = None, proof_context: dict | None = None) -> dict:
     p, v = VARIANTS[o["variant_id"]]
     cur, sale = current_price(o)
     w = compact_warranty(p)
@@ -285,6 +286,7 @@ def offer_row(o: dict, emirate: str | None = None) -> dict:
     if rat.get("note"):
         row["reviews_note"] = rat["note"]
     row["fit"] = compact_fit(p)
+    row["social_proof"] = social_proof(p, o["seller_id"], proof_context)
     return row
 
 
@@ -395,9 +397,220 @@ def seller_store_ratings(seller_id: str) -> dict:
     }
 
 
+SNIPPET_MAX_CHARS = 200
+SOCIAL_PROOF_HINT = (
+    "Always show each product's social_proof in the first answer: rating and review count "
+    "(or 'no customer reviews yet'), one short customer quote when present, and the seller's "
+    "Google Maps rating. Offer more reviews and customer photos via get_reviews. Never invent reviews."
+)
+
+# Keywords used only to pick already-published review texts that match the shopper's filters.
+# Never used to invent or rewrite a review.
+_FIT_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "side": ("side sleeper", "side sleep", "on my side", "on the side", "на боку", "боку", "shoulder", "hips"),
+    "back": ("back sleeper", "back sleep", "on my back", "on the back", "на спине", "спине"),
+    "stomach": ("stomach sleeper", "stomach sleep", "on my stomach", "на живот", "живот"),
+    "couple": ("couple", "partner", "husband", "wife", "boyfriend", "girlfriend", "we've", "we were",
+               "для пар", "мужем", "женой", "партнер", "together"),
+    "motion_isolation": ("motion", "toss", "transfer", "isolation", "disturb", "партнер", "partner movement",
+                         "when they move", "when he", "when she"),
+    "weight": ("kg", "кг", "weight", "heavy", "light", "вес", "килограмм"),
+    "firm": ("firm", "hard", "жестк", "жёстк", "тверд"),
+    "soft": ("soft", "мягк", "мягк"),
+    "cooling": ("cool", "hot", "heat", "sweat", "температур", "жар", "прохлад"),
+    "orthopedic": ("ortho", "back pain", "spine", "позвон", "боль в спине"),
+}
+
+
+def _public_author(name: str | None) -> str | None:
+    if not name:
+        return None
+    first = str(name).strip().split()[0]
+    return first or None
+
+
+def _trim_snippet(text: str, limit: int = SNIPPET_MAX_CHARS) -> str:
+    s = re.sub(r"\s+", " ", (text or "").strip())
+    if len(s) <= limit:
+        return s
+    cut = s[:limit]
+    if " " in cut:
+        cut = cut.rsplit(" ", 1)[0]
+    return cut.rstrip(".,;: ") + "…"
+
+
+def _review_body(r: dict) -> str:
+    text = str(r.get("text") or "").strip()
+    tl = text.lower()
+    parts: list[str] = [text] if text else []
+    adv = str(r.get("advantages") or "").strip()
+    if adv and adv.lower() not in tl:
+        parts.append("Pros: " + adv)
+    dis = str(r.get("disadvantages") or "").strip()
+    if dis and dis.lower() not in tl:
+        parts.append("Cons: " + dis)
+    return " ".join(p for p in parts if p)
+
+
+def _proof_tags(context: dict | None) -> list[str]:
+    ctx = context or {}
+    tags: list[str] = []
+    pos = ctx.get("sleep_position")
+    if pos in _FIT_KEYWORDS:
+        tags.append(pos)
+    if ctx.get("couple"):
+        tags.append("couple")
+    if ctx.get("motion_isolation"):
+        tags.append("motion_isolation")
+    if ctx.get("sleeper_weight_kg") is not None:
+        tags.append("weight")
+    lo, hi = ctx.get("firmness_min"), ctx.get("firmness_max")
+    if lo is not None and float(lo) >= 7:
+        tags.append("firm")
+    if hi is not None and float(hi) <= 4.5:
+        tags.append("soft")
+    ql = " ".join(str(x) for x in (
+        ctx.get("query") or "",
+        " ".join(ctx.get("features") or []),
+    )).lower()
+    if ql:
+        if any(w in ql for w in ("side sleeper", "on my side", "на боку")) and "side" not in tags:
+            tags.append("side")
+        if any(w in ql for w in ("couple", "partner", "для пар")) and "couple" not in tags:
+            tags.append("couple")
+        if "cool" in ql and "cooling" not in tags:
+            tags.append("cooling")
+        if "ortho" in ql and "orthopedic" not in tags:
+            tags.append("orthopedic")
+        if any(w in ql for w in ("firm", "жестк", "жёстк")) and "firm" not in tags and "soft" not in tags:
+            tags.append("firm")
+        if any(w in ql for w in ("soft", "мягк")) and "soft" not in tags:
+            tags.append("soft")
+    # unique, stable order
+    seen, out = set(), []
+    for t in tags:
+        if t not in seen:
+            seen.add(t)
+            out.append(t)
+    return out
+
+
+def _snippet_score(r: dict, body: str, tags: list[str]) -> float:
+    if not body:
+        return -1.0
+    score = 2.0 if len(body) >= 40 else 0.5
+    tl = body.lower()
+    for tag in tags:
+        if any(k in tl for k in _FIT_KEYWORDS.get(tag, ())):
+            score += 3.0
+    if r.get("photo_urls"):
+        score += 0.3
+    date = r.get("date") or ""
+    if isinstance(date, str) and re.match(r"\d{4}-\d{2}-\d{2}", date):
+        # mild recency preference; does not invent or rewrite text
+        score += min(max(int(date[:4]) - 2020, 0), 6) * 0.05
+    return score
+
+
+def compact_seller_rating(seller_id: str | None) -> dict | None:
+    if not seller_id or seller_id not in SELLERS:
+        return None
+    s = SELLERS[seller_id]
+    agg = s.get("store_reviews") or {}
+    if agg.get("aggregate_rating") is None and not agg.get("aggregate_review_count"):
+        return {"seller": s.get("name"), "seller_id": seller_id, "google_maps_rating": None,
+                "google_maps_review_count": 0, "source": "Google Maps showroom ratings"}
+    return {
+        "seller": s.get("name"),
+        "seller_id": seller_id,
+        "google_maps_rating": agg.get("aggregate_rating"),
+        "google_maps_review_count": agg.get("aggregate_review_count"),
+        "source": "Google Maps showroom ratings",
+        "method": agg.get("method"),
+    }
+
+
+def social_proof(p: dict, seller_id: str | None = None, context: dict | None = None,
+                 snippet_count: int = 2) -> dict:
+    """Compact first-response block: rating, 1-2 short quotes, photo links, seller Maps rating."""
+    rat = product_rating(p)
+    block = p.get("reviews") or {}
+    reviews = list(block.get("reviews") or [])
+    count = rat.get("count") or 0
+    zero = bool(block.get("zero_reviews") or count == 0 or rat.get("note"))
+    tags = _proof_tags(context)
+    ranked: list[tuple[float, dict, str]] = []
+    for r in reviews:
+        body = _review_body(r)
+        sc = _snippet_score(r, body, tags)
+        if sc < 0:
+            continue
+        ranked.append((sc, r, body))
+    ranked.sort(key=lambda x: (-x[0], -int((x[1].get("date") or "0000-00-00").replace("-", "") or 0), -len(x[2])))
+    pick_n = max(0, min(int(snippet_count or 2), 2))
+    picked = ranked[:pick_n]
+    snippets = []
+    photo_urls: list[str] = []
+    for _, r, body in picked:
+        snippets.append({
+            "author": _public_author(r.get("author")),
+            "date": r.get("date"),
+            "rating": r.get("rating"),
+            "text": _trim_snippet(body),
+        })
+        for url in r.get("photo_urls") or []:
+            if url and url not in photo_urls:
+                photo_urls.append(url)
+            if len(photo_urls) >= 2:
+                break
+    if len(photo_urls) < 2:
+        for r in reviews:
+            for url in r.get("photo_urls") or []:
+                if url and url not in photo_urls:
+                    photo_urls.append(url)
+                if len(photo_urls) >= 2:
+                    break
+            if len(photo_urls) >= 2:
+                break
+    out: dict[str, Any] = {
+        "rating": None if zero else rat.get("value"),
+        "review_count": 0 if zero else count,
+        "source": rat.get("source") or block.get("source"),
+        "snippets": snippets,
+        "photo_urls": photo_urls[:2],
+        "photo_count": block.get("photo_count") or 0,
+    }
+    if zero:
+        out["reviews"] = "none yet"
+        out["note"] = rat.get("note") or "no customer reviews on the brand site"
+        out["snippets"] = []
+        out["photo_urls"] = []
+        out["photo_count"] = 0
+    if seller_id:
+        sr = compact_seller_rating(seller_id)
+        if sr:
+            out["seller_rating"] = sr
+    else:
+        sids = sorted({o["seller_id"] for o in OFFERS_BY_PRODUCT.get(p["product_id"], [])})
+        out["seller_ratings"] = [x for x in (compact_seller_rating(sid) for sid in sids) if x]
+    return out
+
+
+def _review_tiebreak(o: dict) -> tuple:
+    """Tertiary sort only: never overrides relevance score or price."""
+    p, _ = VARIANTS[o["variant_id"]]
+    rat = product_rating(p)
+    count = rat.get("count") or 0
+    value = rat.get("value") or 0
+    if not count or rat.get("note"):
+        return (0, 0, 0)
+    return (1, min(int(count), 50), float(value))
+
+
 
 def catalog_meta() -> dict:
-    return {"catalog_version": CAT["catalog_version"], "snapshot_generated_at": CAT["generated_at"],
+    return {"catalog_version": CAT["catalog_version"], "server_version": SERVER_VERSION,
+            "snapshot_generated_at": CAT["generated_at"],
             "currency": "AED", "country": "AE",
             "firmness_scale_note": CAT["firmness_scale"]["note"]}
 
@@ -548,7 +761,9 @@ def _search(query: str | None = None, firmness_min: float | None = None, firmnes
         rows.sort(key=lambda r: (-(product_rating(VARIANTS[r[3]["variant_id"]][0]).get("value") or 0),
                                   -(product_rating(VARIANTS[r[3]["variant_id"]][0]).get("count") or 0), r[1]))
     else:
-        rows.sort(key=lambda r: (-r[0], r[1]))
+        # Review counts only break ties after relevance score and price, so they never
+        # bury a better name match or a cheaper same-score offer.
+        rows.sort(key=lambda r: (-r[0], r[1]) + tuple(-x for x in _review_tiebreak(r[3])))
 
     total = len(rows)
     if one_per_product:
@@ -560,10 +775,21 @@ def _search(query: str | None = None, firmness_min: float | None = None, firmnes
                 dedup.append(r)
         rows = dedup
     limit = max(1, min(int(limit or 10), 50))
+    proof_context = {
+        "query": query,
+        "sleep_position": sleep_position,
+        "sleeper_weight_kg": sleeper_weight_kg,
+        "couple": couple,
+        "motion_isolation": motion_isolation,
+        "features": feats,
+        "firmness_min": firmness_min,
+        "firmness_max": firmness_max,
+    }
     out = {
         "total_matching_offers": total,
         "returned": min(limit, len(rows)),
-        "results": [offer_row(r[3], em) for r in rows[:limit]],
+        "results": [offer_row(r[3], em, proof_context) for r in rows[:limit]],
+        "presentation_hint": SOCIAL_PROOF_HINT,
         "catalog": catalog_meta(),
     }
     if em and not rows:
@@ -589,12 +815,16 @@ INSTRUCTIONS = (
     "Firmness uses a normalized 1-10 scale (1 softest, 10 firmest) derived from brand wording, not lab-measured; "
     "dual-sided mattresses list both sides. "
     "Typical flow: list_filters (optional) -> search_mattresses with structured filters (sleep_position, "
-    "sleeper_weight_kg, min_rating, couple, motion_isolation) -> get_product or compare_products for details -> "
-    "get_reviews / get_seller_reviews for review texts and photo URLs -> get_seller_policies for delivery, "
-    "payment (Tabby/Tamara/COD), returns and store ratings. "
+    "sleeper_weight_kg, min_rating, couple, motion_isolation). Search, get_product and compare_products already "
+    "include a social_proof block (product rating and review count, 1-2 short customer quotes, up to 2 original "
+    "customer photo URLs, and the seller's Google Maps rating). Always present the rating, one customer quote "
+    "and the seller rating in your first answer to the shopper — do not wait for a follow-up or a get_reviews "
+    "call. Then offer more reviews and photos via get_reviews / get_seller_reviews, and get_seller_policies for "
+    "delivery, payment (Tabby/Tamara/COD) and returns. "
     "Semantic fit attributes always carry provenance: brand_stated, derived_rule, or from_reviews. "
     "Never present derived_rule or from_reviews values as brand claims, and never invent reviews. "
-    "If review count is 0, say explicitly that the brand site has no customer reviews. "
+    "If social_proof.reviews is 'none yet' or review count is 0, say explicitly that the brand site has no "
+    "customer reviews yet, and still cite the seller's Google Maps rating. "
     "Customer photos are original hosted URLs — do not claim they are stored here. "
     "This is a test catalog snapshot; the buyer completes purchase on the url provided."
 )
@@ -603,7 +833,7 @@ mcp = MCPServer(
     name="uae-mattress-catalog",
     title="UAE Mattress Catalog (agent-first, pilot)",
     instructions=INSTRUCTIONS,
-    version="0.4.1",
+    version=SERVER_VERSION,
 )
 RO = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
 
@@ -617,9 +847,13 @@ RO = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=Tr
         "firmness (1-10), size, height, construction, availability, delivery for the requested emirate, and the "
         "purchase url. Prefer structured filters over free text. Firmness guide: soft 1-4, medium 4.5-6.5, "
         "firm 7-8, extra firm 9-10; dual-sided products match if either side is in range. Price filters apply "
-        "to the current (sale-aware) price. Results include rating+review count and compact semantic fit "
-        "(weight range, sleep positions, couples, motion isolation, value index). Fit labels that are "
-        "derived_rule or from_reviews are not brand claims."),
+        "to the current (sale-aware) price. Results include compact semantic fit (weight range, sleep "
+        "positions, couples, motion isolation, value index) and a social_proof block: product rating and "
+        "review count, 1-2 short customer review snippets (first name/initial only), up to 2 original "
+        "customer photo URLs, and the seller's Google Maps rating. Always present the rating, one quote "
+        "and the seller rating in your first answer. If reviews is 'none yet', say so explicitly and still "
+        "cite the seller rating; never invent reviews. Offer more reviews and photos via get_reviews. "
+        "Fit labels that are derived_rule or from_reviews are not brand claims."),
 )
 def search_mattresses(
     query: Annotated[str | None, Field(description="Optional free-text keywords (model name, material, e.g. 'latex', 'Arizona'). Used for relevance ranking.")] = None,
@@ -688,6 +922,7 @@ def _product_full(p: dict, size: str | None = None) -> dict:
         "country_of_origin": p.get("country_of_origin"), "certifications": p.get("certifications"),
         "description": p.get("description"), "images": (p.get("images") or [])[:4],
         "rating": product_rating(p),
+        "social_proof": social_proof(p),
         "fit": p.get("fit"),
         "reviews": compact_review_block(p, limit=5),
         "seller_store_ratings": [seller_store_ratings(sid) for sid in
@@ -716,7 +951,11 @@ def _resolve_product(pid: str) -> dict | None:
 
 @mcp.tool(title="Get mattress details", annotations=RO, description=(
     "Use this to get full details of one mattress model: all sizes with regular/current AED prices and urls, "
-    "firmness, layers, fillers, semantic fit with provenance, review summary plus up to 5 reviews with photo URLs, seller store ratings, warranty, max load, source url and last_updated. Fit values with provenance derived_rule or from_reviews are not brand claims. "
+    "firmness, layers, fillers, semantic fit with provenance, a social_proof block (rating, short quotes, "
+    "photo URLs, seller Google Maps rating), a review summary plus up to 5 reviews with photo URLs, seller "
+    "store ratings, warranty, max load, source url and last_updated. Always present social_proof (rating, "
+    "one quote or 'no reviews yet', seller rating) in the answer. Fit values with provenance derived_rule "
+    "or from_reviews are not brand claims. "
     "Accepts a product_id (e.g. 'sleep-professor:arizona-duo'), an offer_id or variant_id."))
 def get_product(
     product_id: Annotated[str, Field(description="product_id from search results (offer_id/variant_id also accepted).")],
@@ -733,8 +972,10 @@ COMPARE_FIELDS = ["brand", "construction_type", "height_cm", "max_load_per_sleep
 
 @mcp.tool(title="Compare mattresses", annotations=RO, description=(
     "Use this to compare 2-5 mattress models side by side (firmness, height, construction, layers, features, "
-    "warranty, max load, price for a given size). Pass size (e.g. '160x200') to compare prices for that size; "
-    "otherwise the price range across sizes is shown."))
+    "warranty, max load, price for a given size, social_proof: product rating, 1-2 customer quotes, seller "
+    "Google Maps rating). Always present each model's rating, one quote or 'no reviews yet', and seller "
+    "rating in the comparison. Never invent reviews. Pass size (e.g. '160x200') to compare prices for that "
+    "size; otherwise the price range across sizes is shown."))
 def compare_products(
     product_ids: Annotated[list[str], Field(min_length=2, max_length=5, description="2-5 product_ids.")],
     size: Annotated[str | None, Field(description="Optional size to compare prices, e.g. '160x200'.")] = None,
@@ -754,6 +995,7 @@ def compare_products(
         col.update({k: p.get(k) for k in COMPARE_FIELDS})
         col["firmness"] = firmness_summary(p)
         col["rating"] = product_rating(p)
+        col["social_proof"] = social_proof(p)
         col["fit"] = compact_fit(p)
         col["layers"] = [l["material"] for l in p.get("layers") or []]
         col["features_true"] = sorted(product_features(p))
@@ -1006,11 +1248,41 @@ def parse_free_text(q: str) -> dict:
     return f
 
 
+def _social_proof_title(sp: dict) -> str:
+    seller = (sp.get("seller_rating") or {})
+    seller_bit = ""
+    if seller.get("google_maps_rating") is not None:
+        seller_bit = (f"; seller Google Maps {seller['google_maps_rating']}/5 "
+                      f"({seller.get('google_maps_review_count') or 0} reviews)")
+    if sp.get("reviews") == "none yet" or not sp.get("review_count"):
+        return "no customer reviews yet" + seller_bit
+    return f"{sp.get('rating')}/5 from {sp.get('review_count')} reviews" + seller_bit
+
+
+def _social_proof_line(sp: dict) -> str:
+    parts = [_social_proof_title(sp)]
+    snippets = sp.get("snippets") or []
+    if snippets:
+        q = snippets[0]
+        author = q.get("author") or "customer"
+        date = f", {q['date']}" if q.get("date") else ""
+        quote = q.get("text") or ""
+        parts.append(f"{author}{date}: «{quote}»")
+    photos = sp.get("photo_urls") or []
+    if photos:
+        parts.append("customer photos: " + ", ".join(photos))
+    elif sp.get("reviews") == "none yet" or not sp.get("review_count"):
+        parts.append("no customer review photos")
+    return " | ".join(parts)
+
+
 @mcp.tool(title="Search (ChatGPT-compatible)", annotations=RO, description=(
     "Free-text mattress search for clients that only use search/fetch (e.g. ChatGPT deep research / company "
     "knowledge). Understands size (160x200, king), budget ('under 2000'), firmness words, kids, emirate, "
-    "Tabby/Tamara. Returns {results:[{id,title,url}]}; pass an id to fetch for full details. Prefer "
-    "search_mattresses when structured filters are available."))
+    "Tabby/Tamara, sleep position, weight, couples. Returns {results:[{id,title,url,text}]} where text already "
+    "includes rating, a short customer quote or 'no reviews yet', and the seller Google Maps rating — present "
+    "these in the first answer. Pass an id to fetch for full details. Prefer search_mattresses when structured "
+    "filters are available."))
 def search(query: Annotated[str, Field(description="Natural-language shopping query.")]) -> dict[str, Any]:
     f = parse_free_text(query)
     res = _search(query=query, limit=10, one_per_product="size" not in f and "size_class" not in f, **f)
@@ -1021,8 +1293,9 @@ def search(query: Annotated[str, Field(description="Natural-language shopping qu
         sale = f", sale until {r['sale_ends']}" if r["sale_ends"] else ""
         results.append({
             "id": r["offer_id"],
-            "title": f"{r['name']} {r['size']} — {r['current_price_aed']:.0f} AED (was {r['regular_price_aed']:.0f}{sale})",
+            "title": f"{r['name']} {r['size']} — {r['current_price_aed']:.0f} AED (was {r['regular_price_aed']:.0f}{sale}) — {_social_proof_title(r.get('social_proof') or {})}",
             "url": r["url"],
+            "text": _social_proof_line(r.get("social_proof") or {}),
         })
     return {"results": results}
 
@@ -1059,7 +1332,8 @@ app = mcp.streamable_http_app(
 
 
 async def health(request: Request):
-    return JSONResponse({"ok": True, "server": "uae-mattress-catalog", "mcp_endpoint": "/mcp",
+    return JSONResponse({"ok": True, "server": "uae-mattress-catalog", "server_version": SERVER_VERSION,
+                         "mcp_endpoint": "/mcp",
                          "products": len(PRODUCTS), "offers": len(OFFERS), **catalog_meta()})
 
 app.add_route("/", health, methods=["GET"])

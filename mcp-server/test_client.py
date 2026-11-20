@@ -60,12 +60,23 @@ async def main():
                 sc = r.structured_content
                 print(f"\n=== {name} {args}  is_error={r.is_error}")
                 if name == "search_mattresses" and sc:
-                    print("total:", sc["total_matching_offers"], "notes:", sc.get("notes"))
+                    payload = json.dumps(sc, ensure_ascii=False)
+                    print("total:", sc["total_matching_offers"], "notes:", sc.get("notes"),
+                          "payload_bytes:", len(payload.encode("utf-8")),
+                          "hint:", (sc.get("presentation_hint") or "")[:80])
                     for x in sc["results"]:
+                        sp = x.get("social_proof") or {}
+                        snips = sp.get("snippets") or []
+                        quote = (snips[0].get("text") if snips else "") or ""
                         print(f"  [{x.get('seller')}] {x['name']} {x['size']} firm={x['firmness'].get('scale_1_10') or [y['scale_1_10'] for y in x['firmness'].get('sides', [])]} "
                               f"{x['regular_price_aed']}->{x['current_price_aed']} AED until {x['sale_ends']} | {x['availability']} | "
                               f"rating={x.get('rating')} ({x.get('review_count')}) side={((x.get('fit') or {}).get('side') or {}).get('label')} "
                               f"couples={((x.get('fit') or {}).get('couples') or {}).get('label')} | {x['delivery']} | {x['url']}")
+                        seller_r = (sp.get("seller_rating") or {})
+                        print(f"    social_proof: reviews={sp.get('reviews') or sp.get('review_count')} "
+                              f"rating={sp.get('rating')} src={sp.get('source')} "
+                              f"seller={seller_r.get('google_maps_rating')} ({seller_r.get('google_maps_review_count')}) "
+                              f"photos={len(sp.get('photo_urls') or [])} snippet={quote[:120]}")
                 elif name == "search" and sc:
                     for x in sc["results"]:
                         print("  ", x)
